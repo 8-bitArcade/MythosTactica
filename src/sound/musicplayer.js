@@ -1,6 +1,6 @@
 import * as $j from 'jquery';
 import skin from './skin';
-import beastAudioFile from 'assets/sounds/AncientBeast.ogg';
+import beastAudioFile from 'assets/sounds/MythosTactica.ogg';
 
 export class MusicPlayer {
 	constructor() {

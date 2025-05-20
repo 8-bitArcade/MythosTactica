@@ -27,7 +27,7 @@ export class SerializableLog {
 		// Note that several options exist to serialize circular references, but
 		// when added here, they result in serialized strings larger than 100 MB.
 		const json = JSON.stringify(this, (key, value) => (key === 'sourceCreature' ? {} : value));
-		const prefix = `Ancient Beast ${version.full} GameLog | Generated on ${getYearMonthDayStr()} `;
+		const prefix = `Mythos Tactica ${version.full} GameLog | Generated on ${getYearMonthDayStr()} `;
 		return prefix + SEPARATOR + window.btoa(json);
 	}
 

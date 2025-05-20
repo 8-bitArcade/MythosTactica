@@ -201,7 +201,7 @@ export default class Game {
 
 		// Messages
 		// TODO: Move strings to external file in order to be able to support translations
-		// https://github.com/FreezingMoon/AncientBeast/issues/923
+		// https://github.com/8-bitArcade/MythosTactica/issues/923
 		this.msg = {
 			abilities: {
 				noTarget: 'No targets available.',
@@ -353,7 +353,7 @@ export default class Game {
 			'sounds/drums',
 			'sounds/upgrade',
 			'sounds/mudbath',
-			'sounds/AncientBeast',
+			'sounds/MythosTactica',
 		];
 
 		this.soundsys = new SoundSys({ paths });
@@ -615,7 +615,7 @@ export default class Game {
 		// DO NOT CALL LOG BEFORE UI CREATION
 		this.gameState = 'playing';
 
-		this.log(`Welcome to Ancient Beast ${version}`);
+		this.log(`Welcome to Mythos Tactica ${version}`);
 		this.log('Setting up a ' + playerMode + ' player match');
 
 		this.timeInterval = setInterval(() => {

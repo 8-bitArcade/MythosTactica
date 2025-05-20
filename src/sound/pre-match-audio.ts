@@ -6,7 +6,7 @@ export class PreMatchAudioPlayer {
 	beastAudio: HTMLAudioElement;
 
 	constructor() {
-		this.beastAudio = new Audio(getUrl('sounds/AncientBeast'));
+		this.beastAudio = new Audio(getUrl('sounds/MythosTactica'));
 	}
 
 	playBeast() {

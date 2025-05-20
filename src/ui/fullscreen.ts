@@ -17,7 +17,7 @@ export class Fullscreen {
 			if (document.fullscreenElement) {
 				await document.exitFullscreen();
 			} else {
-				const gameElement = document.getElementById('AncientBeast');
+				const gameElement = document.getElementById('MythosTactica');
 				if (gameElement) {
 					await gameElement.requestFullscreen();
 				}

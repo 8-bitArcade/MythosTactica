@@ -72,7 +72,7 @@ function throwDuplicateBasenamesError() {
 			paths.forEach((p) => console.error(`   ${p}`));
 		});
 
-		throw new Error(`[Ancient Beast]
+		throw new Error(`[Mythos Tactica]
 Some files under assets/autoload/phaser/ have the same basename.
 Basenames are used as keys by Phaser and must be unique.
 Please make each basename unique.`);
@@ -85,7 +85,7 @@ Please make each basename unique.`);
  *
  * TODO: Simplify legacy assets
  *
- * Ancient Beast used to use a custom asset list format in `assetLister`.
+ * Mythos Tactica used to use a custom asset list format in `assetLister`.
  * assetLister.ts was removed, but its format is duplicated here for compatibility reasons.
  * It should probably be rethought and simplified.
  *

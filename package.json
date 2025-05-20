@@ -1,17 +1,17 @@
 {
-	"name": "ancientbeast",
+	"name": "MythosTactica",
 	"version": "0.5.0",
-	"description": "Ancient Beast Game",
+	"description": "Mythos Tactica Game",
 	"main": "deploy/index.html",
-	"homepage": "https://AncientBeast.com",
+	"homepage": "https://MythosTactica.com",
 	"author": " Dread Knight <dk.vali@gmail.com>",
 	"license": " (CC-BY-SA-4.0 OR AGPL-3.0)",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/FreezingMoon/AncientBeast.git"
+		"url": "https://github.com/8-bitArcade/MythosTactica.git"
 	},
 	"bugs": {
-		"url": "https://github.com/FreezingMoon/AncientBeast/issues"
+		"url": "https://github.com/8-bitArcade/MythosTactica/issues"
 	},
 	"keywords": [
 		"game",
@@ -20,7 +20,7 @@
 	],
 	"funding": {
 		"type": "Donate",
-		"url": "https://opencollective.com/AncientBeast"
+		"url": "https://opencollective.com/MythosTactica"
 	},
 	"dependencies": {
 		"@heroiclabs/nakama-js": "^2.0.1",

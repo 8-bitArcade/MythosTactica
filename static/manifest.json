@@ -1,7 +1,7 @@
 {
 	"lang": "English",
-	"name": "Ancient Beast - Turn Based Strategy Game",
-	"short_name": "Ancient Beast",
+	"name": "Mythos Tactica - Turn Based Strategy Game",
+	"short_name": "Mythos Tactica",
 	"scope": "/",
 	"display": "fullscreen",
 	"start_url": "/?utm_source=homescreen",
@@ -15,5 +15,5 @@
 			"sizes": "512x512"
 		}
 	],
-	"url": "https://AncientBeast.com"
+	"url": "https://MythosTactica.com"
 }

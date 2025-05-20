@@ -16,7 +16,7 @@ jobs:
     - name: build
       run: npx webpack --mode=production
       env:
-        PUBLIC_PATH: '/AncientBeast/'
+        PUBLIC_PATH: '/MythosTactica/'
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
@@ -31,7 +31,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
       with:
-        path: /home/runner/work/AncientBeast/AncientBeast
+        path: /home/runner/work/MythosTactica/MythosTactica
 
     - run: npm ci
     - name: Static Code Analysis (ESLint)

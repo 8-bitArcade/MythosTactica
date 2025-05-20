@@ -1,8 +1,8 @@
 /* eslint-disable */
 let id;
-if (window.location.host === 'play.ancientbeast.com') {
+if (window.location.host === 'play.MythosTactica.com') {
 	id = 'UA-2840181-9';
-} else if (window.location.host === 'beta.ancientbeast.com') {
+} else if (window.location.host === 'beta.MythosTactica.com') {
 	id = 'UA-2840181-8';
 }
 

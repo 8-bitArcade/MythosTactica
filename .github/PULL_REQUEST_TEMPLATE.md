@@ -8,9 +8,9 @@ Please provide your ERC20 wallet address, especially if you're addressing an iss
 
 Warning: make sure that you're providing a *wallet* address and not deposit address to an exchange.
 
-Read more about our token (XatteR) here: https://github.com/FreezingMoon/AncientBeast/wiki/XatteR
+Read more about our token (XatteR) here: https://github.com/8-bitArcade/MythosTactica/wiki/XatteR
 
-Feel free to drop by our Discord server if you have any questions https://discord.me/AncientBeast
+Feel free to drop by our Discord server if you have any questions https://discord.me/MythosTactica
 
 TEMPLATE (Please delete this template!)
 ===

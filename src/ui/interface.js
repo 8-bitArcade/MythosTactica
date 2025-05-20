@@ -1216,7 +1216,7 @@ export class UI {
 			const bannerTitles = ['sponsor', 'backer', 'helper'];
 			$j('#opencollective_banner > object').attr(
 				'data',
-				`https://opencollective.com/ancientbeast/tiers/${
+				`https://opencollective.com/MythosTactica/tiers/${
 					bannerTitles[Math.floor(Math.random() * bannerTitles.length)]
 				}.svg?avatarHeight=61&width=800&limit=10`,
 			);
@@ -2292,7 +2292,7 @@ export class UI {
 		const gameFormatter = (game) => {
 			return `<div class="vignette hex">
 			<div class="hexinfo frame">
-			<p class="name">Ancient Beast</p>
+			<p class="name">Mythos Tactica</p>
 			<p>${version}</p>
 			</div>
 			</div>
@@ -2433,7 +2433,7 @@ export class UI {
 		};
 
 		const onTurnEndClick = throttle(() => {
-			ui.game.soundsys.playSFX('sounds/AncientBeast');
+			ui.game.soundsys.playSFX('sounds/MythosTactica');
 		}, 2000);
 
 		const onTurnEndMouseEnter = ifGameNotFrozen(() => {

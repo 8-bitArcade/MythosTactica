@@ -6,7 +6,7 @@ You can help out the project by just ★ starring this repository from the upper
 
 It's very easy to set-up a local server in order to test and contribute to the development version of this game project.  
 It uses web languages like HTML, CSS, Javascript and Node.js. The game engine used is free open source, [Phaser](https://phaser.io).
-Nowadays you can skip setting up a local server and just start developing on the project right away: [![Open in Gitpod](https://img.shields.io/badge/setup-automated-blue?logo=gitpod)](https://gitpod.io/#https://github.com/FreezingMoon/AncientBeast)
+Nowadays you can skip setting up a local server and just start developing on the project right away: [![Open in Gitpod](https://img.shields.io/badge/setup-automated-blue?logo=gitpod)](https://gitpod.io/#https://github.com/8-bitArcade/MythosTactica)
 
 ### Recommended Tool
 
@@ -17,10 +17,10 @@ If you're not very keen on using a browser based IDE, I highly recommend using [
 You can create a clone of the project by using git from the CLI or with the use of a tool like the one recommended above.
 
 ```sh
-git clone https://github.com/FreezingMoon/AncientBeast.git
+git clone https://github.com/8-bitArcade/MythosTactica.git
 ```
 
-In [VSC](https://code.visualstudio.com/download) you can press `Ctrl + Shift + P`, search for `Git: Clone` and then input [just the link](https://github.com/FreezingMoon/AncientBeast.git) in the given field.
+In [VSC](https://code.visualstudio.com/download) you can press `Ctrl + Shift + P`, search for `Git: Clone` and then input [just the link](https://github.com/8-bitArcade/MythosTactica.git) in the given field.
 
 ---
 
@@ -93,7 +93,7 @@ Then access it using [Chromium](https://chromium.org) or [Google Chrome](https:/
 localhost:8080
 ```
 
-You can usually test our latest (and greatest) master branch without any hassle from our auto-deployed [beta app](https://beta.ancientbeast.com).
+You can usually test our latest (and greatest) master branch without any hassle from our auto-deployed [beta app](https://beta.MythosTactica.com).
 
 A handy tip while testing: you can right click the game tab and mute it by simply clicking the `Mute site` option.
 
@@ -102,11 +102,11 @@ A handy tip while testing: you can right click the game tab and mute it by simpl
 ## Getting Involved
 
 After you've play-tested the development version of the game, there are 2 main ways you can contribute to the project.
-For a more comprehensive guide on how to help out the project, you can check out the [Make Your Contribution](https://AncientBeast.com/contribute) guide.
+For a more comprehensive guide on how to help out the project, you can check out the [Make Your Contribution](https://MythosTactica.com/contribute) guide.
 
 ### Report Issues
 
-If you encounter any problems with this version, you can report them to our [GitHub Issue tracker](https://github.com/FreezingMoon/AncientBeast/issues).
+If you encounter any problems with this version, you can report them to our [GitHub Issue tracker](https://github.com/8-bitArcade/MythosTactica/issues).
 Very often, it will be very helpful for debugging purposes to fetch game logs when encountering issues. You can use the `AB.getLog()` function from the browser console window in order to fetch the current match log.
 In order to open up Google Chrome browser's console, you can press `Ctrl + Shift + J`. To replay a match, you'll have to be in the pre-match screen, paste its log in the console and then press the `Return` key.
 
@@ -124,7 +124,7 @@ To access the Meta Powers screen:
 ### Patch Game
 
 The main coding language used is Javascript, feel free to create patches and propose them by making a Pull Request.
-You should look around on the GitHub Issue tracker for open issues, priority being the ones that are assigned to the next [milestone](https://github.com/FreezingMoon/AncientBeast/milestones) and are tagged "[Priority](https://github.com/FreezingMoon/AncientBeast/labels/Priority)", while also lacking the "[Brainstorm](https://github.com/FreezingMoon/AncientBeast/labels/Brainstorm)" tag. You can ping [DreadKnight](https://github.com/DreadKnight) in the [Discord server](https://discord.gg/x78rKen) in order to be assigned to something specific, otherwise you can comment on a specific issue in order to receive the green light for it, making sure there's nobody else currently working on the issue or that design hasn't changed and a patch is still required. The game engine we're using is the [community edition](https://github.com/photonstorm/phaser-ce) of [Phaser](https://github.com/photonstorm/phaser), which is free and open source, and has nice [documentation](https://photonstorm.github.io/phaser-ce).
+You should look around on the GitHub Issue tracker for open issues, priority being the ones that are assigned to the next [milestone](https://github.com/8-bitArcade/MythosTactica/milestones) and are tagged "[Priority](https://github.com/8-bitArcade/MythosTactica/labels/Priority)", while also lacking the "[Brainstorm](https://github.com/8-bitArcade/MythosTactica/labels/Brainstorm)" tag. You can ping [DreadKnight](https://github.com/DreadKnight) in the [Discord server](https://discord.gg/x78rKen) in order to be assigned to something specific, otherwise you can comment on a specific issue in order to receive the green light for it, making sure there's nobody else currently working on the issue or that design hasn't changed and a patch is still required. The game engine we're using is the [community edition](https://github.com/photonstorm/phaser-ce) of [Phaser](https://github.com/photonstorm/phaser), which is free and open source, and has nice [documentation](https://photonstorm.github.io/phaser-ce).
 
 In order to patch the game and constantly test it, run it using this command, which will keep track of any file changes:
 
@@ -162,14 +162,14 @@ In addition, the following commands were added to `package.json`:
 
 ### Next Step
 
-You are free to browse [existing issues](https://github.com/FreezingMoon/AncientBeast/issues) (for beginner coders there are issues labeled as [easy](https://github.com/FreezingMoon/AncientBeast/issues?q=is%3Aopen+is%3Aissue+label%3Aeasy)) and comment on the ones that you want to take a swing at in order to make sure the issue is still relevant and that nobody else is working on it. You can also drop by the project's [Discord server](https://discord.gg/x78rKen) and mention your skills and that you're interested in helping out; you'll be assigned to a specific issue. When you're done, simply create a **Pull Request**. Note that you might need to pull in from master repository before doing so. Your patches will get reviewed and tested, if there are issues with them, you'll receive feedback in order to make corrections. Otherwise, your pull request will get approved and merged into the master branch and you'll get credited for it.
+You are free to browse [existing issues](https://github.com/8-bitArcade/MythosTactica/issues) (for beginner coders there are issues labeled as [easy](https://github.com/8-bitArcade/MythosTactica/issues?q=is%3Aopen+is%3Aissue+label%3Aeasy)) and comment on the ones that you want to take a swing at in order to make sure the issue is still relevant and that nobody else is working on it. You can also drop by the project's [Discord server](https://discord.gg/x78rKen) and mention your skills and that you're interested in helping out; you'll be assigned to a specific issue. When you're done, simply create a **Pull Request**. Note that you might need to pull in from master repository before doing so. Your patches will get reviewed and tested, if there are issues with them, you'll receive feedback in order to make corrections. Otherwise, your pull request will get approved and merged into the master branch and you'll get credited for it.
 
 #### Token Bounties
 
-Many of the issues and open tasks have bounties specified in the title, for example: `[bounty: 5 XTR]`, indicating the amount of [XatteR](https://github.com/FreezingMoon/AncientBeast/wiki/XatteR) that will be given to the person that solves the issue(s). You can read more about our utility token in our detailed wiki article [over here](https://github.com/FreezingMoon/AncientBeast/wiki/XatteR).
+Many of the issues and open tasks have bounties specified in the title, for example: `[bounty: 5 XTR]`, indicating the amount of [XatteR](https://github.com/8-bitArcade/MythosTactica/wiki/XatteR) that will be given to the person that solves the issue(s). You can read more about our utility token in our detailed wiki article [over here](https://github.com/8-bitArcade/MythosTactica/wiki/XatteR).
 
 ---
 
 ## More Ways
 
-Coding is not the only thing required in order to make this project as awesome as possible, see [How to Contribute](https://ancientbeast.com/contribute) guide.
+Coding is not the only thing required in order to make this project as awesome as possible, see [How to Contribute](https://MythosTactica.com/contribute) guide.

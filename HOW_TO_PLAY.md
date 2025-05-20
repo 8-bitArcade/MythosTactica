@@ -1,4 +1,4 @@
-# How to Play Ancient Beast
+# How to Play Mythos Tactica
 
 ## Table of Contents
 - [Getting Started](#getting-started)
@@ -9,7 +9,7 @@
 ## Getting Started
 
 ### Web Play
-1. Visit [AncientBeast.com](https://AncientBeast.com)
+1. Visit [MythosTactica.com](https://MythosTactica.com)
 2. Choose your preferred game mode (1v1 or 2v2)
 3. Click "Play Game" to start
 
@@ -113,4 +113,4 @@
 
 ---
 
-For more detailed information about specific units, abilities, and advanced strategies, visit our [Wiki](https://github.com/FreezingMoon/AncientBeast/wiki) or join our [Discord](https://discord.gg/CtqBsnF85z) community. 
+For more detailed information about specific units, abilities, and advanced strategies, visit our [Wiki](https://github.com/8-bitArcade/MythosTactica/wiki) or join our [Discord](https://discord.gg/CtqBsnF85z) community. 
