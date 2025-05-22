@@ -1,5 +1,5 @@
 import { throttle } from 'underscore';
-import { Creature } from '../creature';
+import { Creature } from '../core/creature';
 import { CreatureQueue } from '../creature_queue';
 
 const CONST = {

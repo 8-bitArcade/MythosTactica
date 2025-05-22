@@ -1,4 +1,4 @@
-import { zfill, toBool } from '../../utility/string';
+import { zfill, toBool } from '../../utils/string';
 import { expect, describe, test } from '@jest/globals';
 
 describe('zfill', () => {

@@ -1,6 +1,6 @@
 import * as semver from 'semver';
 import { expect, describe, test } from '@jest/globals';
-import * as version from '../../utility/version';
+import * as version from '../../utils/version';
 
 describe('version.full', () => {
 	test('is valid', () => {

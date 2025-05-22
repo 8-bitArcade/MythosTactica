@@ -1,14 +1,14 @@
 import * as $j from 'jquery';
 import { Damage } from '../damage';
-import { Team } from '../utility/team';
-import * as matrices from '../utility/matrices';
-import * as arrayUtils from '../utility/arrayUtils';
-import { Effect } from '../effect';
-import { Creature } from '../creature';
+import { Team } from '../utils/team';
+import * as matrices from '../utils/matrices';
+import * as arrayUtils from '../utils/arrayUtils';
+import { Effect } from '../core/effect';
+import { Creature } from '../core/creature';
 import Game from '../game';
-import { Hex } from '../utility/hex';
-import { getPointFacade } from '../utility/pointfacade';
-import { Trap } from '../utility/trap';
+import { Hex } from '../utils/hex';
+import { getPointFacade } from '../utils/pointFacade';
+import { Trap } from '../utils/trap';
 
 /*
  *TODO

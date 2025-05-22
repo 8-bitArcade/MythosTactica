@@ -1,4 +1,4 @@
-import { Movement } from '../creature';
+import { Movement } from '../core/creature';
 
 export type UnitSize = 1 | 2 | 3;
 export type UnitDisplayInfo = {

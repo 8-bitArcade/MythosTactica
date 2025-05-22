@@ -1,6 +1,6 @@
 import Game from './game';
-import { Creature, CreatureVitals, CreatureMasteries } from './creature';
-import { Effect } from './effect';
+import { Creature, CreatureVitals, CreatureMasteries } from './core/creature';
+import { Effect } from './core/effect';
 
 export type DamageStats = Partial<CreatureVitals & CreatureMasteries & { pure?: number }>;
 export type DamageResult = Partial<DamageStats> & { total: number };

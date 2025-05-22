@@ -1,13 +1,13 @@
 import * as $j from 'jquery';
 import { Damage } from '../damage';
-import { Team, isTeam } from '../utility/team';
-import * as matrices from '../utility/matrices';
-import * as arrayUtils from '../utility/arrayUtils';
-import { Creature } from '../creature';
-import { Effect } from '../effect';
-import { Direction } from '../utility/hex';
+import { Team, isTeam } from '../utils/team';
+import * as matrices from '../utils/matrices';
+import * as arrayUtils from '../utils/arrayUtils';
+import { Creature } from '../core/creature';
+import { Effect } from '../core/effect';
+import { Direction } from '../utils/hex';
 import Game from '../game';
-import { QueryOptions } from '../utility/hexgrid';
+import { QueryOptions } from '../utils/hexGrid';
 
 /** Creates the abilities
  * @param {Object} G the game object

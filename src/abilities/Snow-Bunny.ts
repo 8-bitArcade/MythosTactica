@@ -1,11 +1,11 @@
 import * as $j from 'jquery';
 import { Damage } from '../damage';
-import { Team, isTeam } from '../utility/team';
-import * as matrices from '../utility/matrices';
-import * as arrayUtils from '../utility/arrayUtils';
+import { Team, isTeam } from '../utils/team';
+import * as matrices from '../utils/matrices';
+import * as arrayUtils from '../utils/arrayUtils';
 import Game from '../game';
-import { Hex } from '../utility/hex';
-import { Point, getPointFacade } from '../utility/pointfacade';
+import { Hex } from '../utils/hex';
+import { Point, getPointFacade } from '../utils/pointFacade';
 
 /* TODO:
  * Refactor to remove the `arguments` keyword

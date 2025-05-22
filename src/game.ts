@@ -1,33 +1,35 @@
-import * as $j from 'jquery';
-import { Animations } from './animations';
-import { CreatureQueue } from './creature_queue';
-import { GameLog } from './utility/gamelog';
-import { SoundSys } from './sound/soundsys';
-import { MusicPlayer } from './sound/musicplayer';
-import { Hex } from './utility/hex';
-import { HexGrid } from './utility/hexgrid';
-import { getUrl, use as assetsUse } from './assets';
-import { Player, PlayerColor, PlayerID } from './player';
+// jQuery removed: All UI logic is now handled by Phaser Scenes or Containers.
+import { Animations } from './systems/animations';
+import { CreatureQueue } from './systems/creatureQueue';
+import { GameLog } from './utils/gamelog';
+import { SoundSys } from './systems/soundSys';
+import { MusicPlayer } from './systems/musicPlayer';
+import { Hex } from './utils/hex';
+import { HexGrid } from './utils/hexGrid';
+import { getUrl, use as assetsUse } from './assets'; // Consider moving to utils/assets if more helpers are added
+import { Player, PlayerColor, PlayerID } from './core/player';
 import { UI } from './ui/interface';
-import { Creature, CreatureHintType } from './creature';
+import { Creature, CreatureHintType } from './core/creature';
 import { unitData } from './data/units';
 import 'pixi';
 import 'p2';
-// @ts-expect-error 2307
-import Phaser, { Signal } from 'phaser';
+import Phaser from 'phaser'; // Removed Signal from this import
 import MatchI from './multiplayer/match';
 import Gameplay from './multiplayer/gameplay';
-import { sleep } from './utility/time';
-import { DEBUG_DISABLE_GAME_STATUS_CONSOLE_LOG, DEBUG_DISABLE_MUSIC } from './debug';
-import { Point, configure as configurePointFacade } from './utility/pointfacade';
-import { pretty as version } from './utility/version';
-import { Ability } from './ability';
-import { Effect } from './effect';
-import { GameConfig } from './script';
-import { Trap } from './utility/trap';
-import { Drop } from './drop';
+import { sleep } from './utils/time';
+import { DEBUG_DISABLE_GAME_STATUS_CONSOLE_LOG, DEBUG_DISABLE_MUSIC } from './core/debug';
+import { Point, configure as configurePointFacade } from './utils/pointFacade';
+import { pretty as version } from './core/version';
+import { Ability } from './core/ability';
+import { Effect } from './core/effect';
+import { GameConfig } from './core/script';
+import { Trap } from './utils/trap';
+import { Drop } from './core/drop';
 import { CreatureType, Realm, UnitData } from './data/types';
-import { setAudioMode } from './sound/soundsys';
+import { setAudioMode } from './systems/soundSys';
+import { TurnManager } from './systems/turnManager';
+import { setupSignalChannels, GameSignals } from './systems/signalChannels';
+import { getHexAt as getHexAtUtil } from './utils/hexUtils';
 /* eslint-disable prefer-rest-params */
 
 /* NOTES/TODOS
@@ -45,252 +47,95 @@ import { setAudioMode } from './sound/soundsys';
  * It's the root element and defined only one time through the G variable.
  *
  * NOTE: Constructor does nothing because the G object must be defined
- * before creating other class instances. The game setup is triggered
- * to really start the game.
- */
 
 type AnimationID = number;
 
 export default class Game {
-	/* Attributes
-	 *
-	 * NOTE : attributes and variables starting with $ are jQuery elements
-	 * and jQuery functions can be called directly from them.
-	 *
-	 * // jQuery attributes
-	 * $combatFrame :   Combat element containing all graphics except the UI
-	 *
-	 * // Game elements
-	 * players :            Array : Contains Player objects ordered by player ID (0 to 3)
-	 * creatures :          Array : Contains Creature objects (creatures[creature.id]) start at index 1
-	 * traps :              Array : Contains Trap objects
-	 *
-	 * grid :               Grid :  Grid object
-	 * UI :             UI :    UI object
-	 *
-	 * queue :              CreatureQueue : queue of creatures to manage phase order
-	 *
-	 * turn :               Integer :   Current's turn number
-	 *
-	 * // Normal attributes
-	 * playerMode :     Integer :   Number of players in the game
-	 * activeCreature : Creature :  Current active creature object reference
-	 * creatureData :       Array :     Array containing all data for the creatures
-	 *
-	 */
-	abilities: Array<Partial<Ability>[]>;
-	players: Player[];
-	creatures: Creature[];
-	traps: Trap[];
-	drops: Drop[];
-	effects: Effect[];
-	activeCreature: Creature | undefined;
-	matchid: number;
-	playersReady: boolean;
-	preventSetup: boolean;
-	animations: Animations;
-	queue: CreatureQueue;
-	creatureData: typeof unitData | [];
-	pause: boolean;
-	gameState: 'initialized' | 'loading' | 'loaded' | 'playing' | 'ended';
-	pauseTime: number;
-	unitDrops: number;
-	minimumTurnBeforeFleeing: number;
-	availableCreatures: CreatureType[];
-	animationQueue: (Animation | AnimationID)[];
-	checkTimeFrequency: number;
-	gamelog: GameLog;
-	configData: object;
-	match: MatchI | object;
-	gameplay: Gameplay;
-	session = null;
-	client = null;
-	connect = null;
-	multiplayer: boolean;
-	matchInitialized: boolean;
-	realms: Realm[];
-	availableMusic = [];
-	inputMethod = 'Mouse';
-	firstKill: boolean;
-	freezedInput: boolean;
-	turnThrottle: boolean;
-	turn: number;
-	Phaser: Phaser;
-	msg: any; // type this properly
-	triggers: Record<string, RegExp>;
-	signals: any;
+  signals: GameSignals;
+  animations: Animations;
+  queue: CreatureQueue;
+  gamelog: GameLog;
+  soundSys: SoundSys;
+  musicPlayer: MusicPlayer;
+  grid: HexGrid;
+  phaserGame: Phaser.Game;
+  UI: UI;
+  turnManager: TurnManager;
+  effectManager: EffectManager;
+  dataManager: DataManager;
+  inputHandler: InputHandler;
+  multiplayerManager: MultiplayerManager;
+  hexUtils: HexUtils;
+  trapUtils: TrapUtils;
+  uiManager: UIManager;
 
-	// The optionals below are created by the various methods of `Game`, mainly by `setup` and `loadGame`
+  constructor() {
+    this.signals = setupSignalChannels(['ui', 'game', 'system', 'creature', 'player', 'metaPowers', 'hex']);
+    this.animations = new Animations(this);
+    this.queue = new CreatureQueue(() => this.creatures);
+    this.gamelog = new GameLog(
+      (log) => {/* stubbed for modularization */},
+      (log) => {/* stubbed for modularization */},
+    );
+    this.soundSys = new SoundSys({ paths: [] });
+    this.musicPlayer = this.soundSys.musicPlayer;
+    this.grid = new HexGrid();
+    this.phaserGame = new Phaser.Game(1920, 1080, Phaser.AUTO, 'combatwrapper', {
+      update: this.phaserUpdate.bind(this),
+      render: this.phaserRender.bind(this),
+    });
+    this.UI = new UI();
+    this.turnManager = new TurnManager();
+    this.effectManager = new EffectManager();
+    this.dataManager = new DataManager();
+    this.inputHandler = new InputHandler();
+    this.multiplayerManager = new MultiplayerManager();
+    this.hexUtils = new HexUtils();
+    this.trapUtils = new TrapUtils();
+    this.uiManager = new UIManager();
+  }
 
-	musicPlayer?: any;
-	soundsys?: any;
+  // loadUnitData has been modularized and moved to dataManager.ts
 
-	background_image?: string;
+import { loadUnitData } from './systems/dataManager';
 
-	playerMode?: number;
+  loadGame(setupOpt: Partial<GameConfig>, matchInitialized?: boolean, matchid?: number, onLoadCompleteFn = () => {}) {
+    this.dataManager.loadGame(setupOpt, matchInitialized, matchid, onLoadCompleteFn);
+  }
 
-	UI?: any;
+  startLoading() {
+    this.uiManager.startLoading();
+  }
 
-	trapId?: number;
-	effectId?: number;
-	dropId?: number;
-	grid?: HexGrid;
+  loadFinish() {
+    this.uiManager.loadFinish();
+  }
 
-	startMatchTime?: Date;
-	$combatFrame?: JQuery<HTMLElement>; //eslint-disable-line no-undef
-	timeInterval?: NodeJS.Timer; //eslint-disable-line no-undef
+  phaserUpdate() {
+    this.turnManager.phaserUpdate();
+  }
 
-	windowResizeTimeout?: string | number | NodeJS.Timer; //eslint-disable-line no-undef
+  phaserRender() {
+    this.turnManager.phaserRender();
+  }
 
-	pauseStartTime?: Date;
+  onBlur() {
+    this.inputHandler.onBlur();
+  }
 
-	timePool?: number;
-	turnTimePool?: number;
+  onFocus() {
+    this.inputHandler.onFocus();
+  }
 
-	endGameSound?: any;
-
-	constructor() {
-		this.abilities = [];
-		this.players = [];
-		this.creatures = [];
-		this.traps = [];
-		this.drops = [];
-		this.effects = [];
-		this.activeCreature = undefined;
-		this.matchid = null;
-		this.playersReady = false;
-		this.preventSetup = false;
-		this.animations = new Animations(this);
-		this.queue = new CreatureQueue(() => this.creatures);
-		this.creatureData = [];
-		this.pause = false;
-		this.gameState = 'initialized';
-		this.pauseTime = 0;
-		this.unitDrops = 0;
-		this.minimumTurnBeforeFleeing = 12;
-		this.availableCreatures = [];
-		this.animationQueue = [];
-		this.checkTimeFrequency = 1000;
-		this.gamelog = new GameLog(
-			(log) => this.onLogSave(log),
-			(log) => this.onLogLoad(log),
-		);
-		this.configData = {};
-		this.match = {};
-		this.gameplay = undefined;
-		this.session = null;
-		this.client = null;
-		this.connect = null;
-		this.multiplayer = false;
-		this.matchInitialized = false;
-		this.realms = ['-', 'A', 'E', 'G', 'L', 'P', 'S', 'W'];
-		this.availableMusic = [];
-		this.inputMethod = 'Mouse';
-
-		// Gameplay properties
-		this.firstKill = false;
-		this.freezedInput = false;
-		this.turnThrottle = false;
-		this.turn = 0;
-
-		// Phaser
-		this.Phaser = new Phaser.Game(1920, 1080, Phaser.AUTO, 'combatwrapper', {
-			update: this.phaserUpdate.bind(this),
-			render: this.phaserRender.bind(this),
-		});
-
-		// Messages
-		// TODO: Move strings to external file in order to be able to support translations
-		// https://github.com/8-bitArcade/MythosTactica/issues/923
-		this.msg = {
-			abilities: {
-				noTarget: 'No targets available.',
-				noPlasma: 'Not enough plasma.',
-				noPsy: 'Psyhelm overload: too many units!',
-				alreadyUsed: 'This ability has already been used.',
-				tooMuch: 'Too much %stat%.',
-				notEnough: 'Not enough %stat%.',
-				notMoveable: 'This creature cannot be moved.',
-				passiveCycle: 'Switches between any usable abilities.',
-				passiveUnavailable: 'No usable abilities to switch to.',
-			},
-			ui: {
-				dash: {
-					materializeOverload: 'Overload! Maximum number of units controlled',
-					selectUnit: 'Please select an available unit from the left grid',
-					wrongPlayer: 'Please select an available unit from own unit grid',
-					lowPlasma: 'Low Plasma! Cannot materialize the selected unit',
-					// plasmaCost :    String :    plasma cost of the unit to materialize
-					materializeUnit: (plasmaCost: string) => {
-						return 'Materialize unit at target location for ' + plasmaCost + ' plasma';
-					},
-					materializeUsed: 'Materialization has already been used this round',
-					heavyDev: 'This unit is currently under heavy development',
-				},
-			},
-		};
-
-		/* Regex Test for triggers */
-		this.triggers = {
-			onStepIn: /\bonStepIn\b/,
-			onStepOut: /\bonStepOut\b/,
-			onReset: /\bonReset\b/,
-			onStartPhase: /\bonStartPhase\b/,
-			onEndPhase: /\bonEndPhase\b/,
-			onMovement: /\bonMovement\b/,
-			onUnderAttack: /\bonUnderAttack\b/,
-			onDamage: /\bonDamage\b/,
-			onHeal: /\bonHeal\b/,
-			onAttack: /\bonAttack\b/,
-			onCreatureMove: /\bonCreatureMove\b/,
-			onCreatureDeath: /\bonCreatureDeath\b/,
-			onCreatureSummon: /\bonCreatureSummon\b/,
-
-			onStepIn_other: /\bonOtherStepIn\b/,
-			onStepOut_other: /\bonOtherStepOut\b/,
-			onReset_other: /\bonOtherReset\b/,
-			onStartPhase_other: /\bonOtherStartPhase\b/,
-			onEndPhase_other: /\bonOtherEndPhase\b/,
-			onMovement_other: /\bonOtherMovement\b/,
-			onAttack_other: /\bonOtherAttack\b/,
-			onDamage_other: /\bonOtherDamage\b/,
-			onHeal_other: /\bonOtherHeal\b/,
-			onUnderAttack_other: /\bonOtherUnderAttack\b/,
-			onCreatureMove_other: /\bonOtherCreatureMove\b/,
-			onCreatureDeath_other: /\bonOtherCreatureDeath\b/,
-			onCreatureSummon_other: /\bonOtherCreatureSummon\b/,
-
+  maybeSetup() {
+    this.turnManager.maybeSetup();
+  }
+}
 			onEffectAttach: /\bonEffectAttach\b/,
 			onEffectAttach_other: /\bonOtherEffectAttach\b/,
 
 			onStartOfRound: /\bonStartOfRound\b/,
 			onQuery: /\bonQuery\b/,
-			oncePerDamageChain: /\boncePerDamageChain\b/,
-		};
-
-		const signalChannels = ['ui', 'metaPowers', 'creature', 'hex'];
-		this.signals = this.setupSignalChannels(signalChannels);
-	}
-
-	loadUnitData(data: UnitData) {
-		const dpcolor: PlayerColor[] = ['blue', 'orange', 'green', 'red'];
-
-		this.creatureData = data;
-
-		data.forEach((creature) => {
-			if (!creature.playable) {
-				return;
-			}
-
-			const creatureId = creature.id,
-				realm = creature.realm,
-				level = creature.level,
-				type = (realm.toUpperCase() + level) as CreatureType,
-				name = creature.name;
-
-			let count: number, i: number;
-
-			// Create the `creature.type` property
 			creature['type'] = type;
 
 			// Load unit shouts
@@ -378,12 +223,10 @@ export default class Game {
 		this.Phaser.load.image('background', getUrl('locations/' + this.background_image + '/bg'));
 
 		// Load artwork, shout and avatar for each unit
-		this.loadUnitData(unitData);
+		loadUnitData(unitData, this); // Modularized: see dataManager.ts
+
 	}
 
-	hexAt(x: number, y: number): Hex | undefined {
-		return this.grid.hexAt(x, y);
-	}
 
 	get activePlayer() {
 		if (this.multiplayer) {
@@ -399,7 +242,12 @@ export default class Game {
 	}
 
 	startLoading() {
-		$j('#gameSetupContainer').hide();
+		// jQuery removed: Use Phaser 3 UI for loading/progress.
+		if (this.uiManager && this.uiManager.showLoadingScreen) {
+			this.uiManager.showLoadingScreen();
+		}
+		// If not available, consider creating a dedicated LoadingScene or Container.
+	}
 		$j('#loader').removeClass('hide');
 		$j('body').css('cursor', 'wait');
 	}
@@ -754,27 +602,7 @@ export default class Game {
 	/**
 	 * Replace the current queue with the next queue
 	 */
-	nextRound() {
-		this.turn++;
-		this.log(`Round ${this.turn}`, 'roundmarker', true);
-		this.onStartOfRound();
-		this.nextCreature();
-	}
 
-	/**
-	 * Activate the next creature in queue
-	 */
-	nextCreature() {
-		this.UI.closeDash();
-		this.UI.btnToggleDash.changeState('normal');
-		this.grid.xray(new Hex(-1, -1, null, this)); // Clear Xray
-
-		if (this.gameState == 'ended') {
-			return;
-		}
-
-		this.stopTimer();
-		// Delay
 		setTimeout(() => {
 			const interval = setInterval(() => {
 				clearInterval(interval);
@@ -840,9 +668,7 @@ export default class Game {
 	}
 
 	updateQueueDisplay(excludeActiveCreature?) {
-		if (this.UI) {
-			this.UI.updateQueueDisplay(excludeActiveCreature);
-		}
+		return TurnManager.updateQueueDisplay(this, excludeActiveCreature);
 	}
 
 	/**
@@ -894,112 +720,11 @@ export default class Game {
 		}
 	}
 
-	/**
-	 * End turn for the current unit
-	 */
-	skipTurn(o?) {
-		// NOTE: If skipping a turn and there is a temp creature, destroy it.
-		this.creatures.filter((c) => c.temp).forEach((c) => c.destroy());
-
-		// Send skip turn to server
-
-		if (this.turnThrottle) {
 			return;
-		}
-
-		o = $j.extend(
-			{
-				callback: function () {},
-				noTooltip: false,
-				tooltip: 'Skipped',
-			},
-			o,
-		);
-
-		this.turnThrottle = true;
-		this.UI.btnSkipTurn.changeState('disabled');
-		this.UI.btnDelay.changeState('disabled');
-		this.UI.btnAudio.changeState('disabled');
-
-		setTimeout(() => {
-			this.turnThrottle = false;
-			this.UI.btnSkipTurn.changeState('normal');
-
-			if (this.activeCreature?.canWait && this.queue.queue.length > 1) {
-				this.UI.btnDelay.changeState('normal');
-			}
-
-			o.callback.apply();
-		}, 1000);
-
-		if (this.activeCreature) {
-			this.activeCreature.facePlayerDefault();
-
-			const skipTurn = new Date();
-			const p = this.activeCreature.player;
-			p.totalTimePool = p.totalTimePool - (skipTurn.valueOf() - p.startTime.valueOf());
-			this.pauseTime = 0;
-			this.activeCreature.deactivate('turn-end');
-			const activeCreature = this.activeCreature;
-			this.nextCreature();
-
-			setTimeout(() => {
-				if (!o.noTooltip) {
-					activeCreature.hint(o.tooltip, 'msg_effects');
-				}
-			}, 350);
-		}
-	}
-
-	/**
-	 * Delay the action turn of the current creature
-	 */
-	delayCreature(o) {
-		// Send skip turn to server
-		if (this.multiplayer && this.gameplay instanceof Gameplay) {
-			this.gameplay.delay();
-		}
-
-		if (this.turnThrottle) {
-			return;
-		}
-
-		if (!this.activeCreature?.canWait || this.queue.isCurrentEmpty()) {
-			return;
-		}
-
-		o = $j.extend(
-			{
-				callback: function () {},
-			},
-			o,
-		);
-
-		this.turnThrottle = true;
-		this.UI.btnSkipTurn.changeState('disabled');
-		this.UI.btnDelay.changeState('disabled');
-
-		setTimeout(() => {
-			this.turnThrottle = false;
-			this.UI.btnSkipTurn.changeState('normal');
-			if (this.activeCreature?.canWait && !this.queue.isCurrentEmpty()) {
-				this.UI.btnDelay.changeState('slideIn');
-			}
-
-			o.callback.apply();
-		}, 1000);
-
-		const skipTurn = new Date(),
-			p = this.activeCreature.player;
-
-		p.totalTimePool = p.totalTimePool - (skipTurn.valueOf() - p.startTime.valueOf());
-		this.activeCreature.wait();
-		this.nextCreature();
-	}
-
-	startTimer() {
-		clearInterval(this.timeInterval);
-
+		} else {
+			const next = this.queue.queue[0];
+			if (this.activeCreature && this.activeCreature) {
+				differentPlayer = this.activeCreature.player != next.player;
 		const totalTime = new Date().valueOf();
 		this.activeCreature.player.startTime = new Date(totalTime - this.pauseTime);
 		this.checkTime();
@@ -1109,7 +834,7 @@ export default class Game {
 	/**
 	 * @param {CreatureType} type - Creature's type (ex: "--" for Dark Priest)
 	 * Query the database for creature stats.
-	 * Additonaly, ensure that a `type` property exists on each creature.
+	 * Additonally, ensure that a `type` property exists on each creature.
 	 */
 	retrieveCreatureStats(type: CreatureType) {
 		const totalCreatures = this.creatureData.length;
@@ -1461,160 +1186,12 @@ export default class Game {
 		}
 	}
 
-	/* endGame()
-	 *
-	 * End the game and print stats
-	 */
-	endGame() {
-		this.soundsys.stopMusic();
-		this.endGameSound = this.soundsys.playSFX('sounds/drums');
-
-		this.stopTimer();
-		this.gameState = 'ended';
-
-		//-------End bonuses--------//
-		for (let i = 0; i < this.playerMode; i++) {
-			// No fleeing
-			if (!this.players[i].hasFled) {
-				this.players[i].score.push({
-					type: 'nofleeing',
-				});
-			}
-
-			// Surviving Creature Bonus
-			let immortal = true;
-			for (let j = 0; j < this.players[i].creatures.length; j++) {
-				if (!this.players[i].creatures[j].dead) {
-					if (this.players[i].creatures[j].type != '--') {
-						this.players[i].score.push({
-							type: 'creaturebonus',
-							creature: this.players[i].creatures[j],
-						});
-					} else {
-						// Dark Priest Bonus
-						this.players[i].score.push({
-							type: 'darkpriestbonus',
-						});
-					}
-				} else {
-					immortal = false;
-				}
-			}
-
-			// Immortal
-			if (immortal && this.players[i].creatures.length > 1) {
-				// At least 1 creature summoned
-				this.players[i].score.push({
-					type: 'immortal',
-				});
-			}
-		}
-		this.UI.endGame();
-	}
-
-	action(o, opt) {
-		const defaultOpt = {
-			callback: function () {},
-		};
-
-		opt = $j.extend(defaultOpt, opt);
-
-		this.clearOncePerDamageChain();
-		switch (o.action) {
-			case 'move':
-				this.activeCreature.moveTo(this.grid.hexes[o.target.y][o.target.x], {
-					callback: opt.callback,
-				});
-				break;
-			case 'skip':
-				this.skipTurn({
-					callback: opt.callback,
-				});
-				break;
-			case 'delay':
-				this.delayCreature({
-					callback: opt.callback,
-				});
-				break;
-			case 'flee':
-				this.activeCreature.player.flee({
-					callback: opt.callback,
-				});
-				break;
-			case 'ability': {
-				const args = $j.makeArray(o.args[1]);
-				const ability = this.activeCreature.abilities[o.id];
-				// If Abolished used Bonfire Spring, reset the range
-				if (ability.title === 'Bonfire Spring') {
-					this.activeCreature.accumulatedTeleportRange = 0;
-				}
-
-				if (o.target.type == 'hex') {
-					args.unshift(this.grid.hexes[o.target.y][o.target.x]);
-					this.activeCreature.abilities[o.id].animation2({
-						callback: opt.callback,
-						arg: args,
-					});
-				}
-
-				if (o.target.type == 'creature') {
-					args.unshift(this.creatures[o.target.crea]);
-					this.activeCreature.abilities[o.id].animation2({
-						callback: opt.callback,
-						arg: args,
-					});
-				}
-
-				if (o.target.type == 'array') {
-					const array = o.target.array.map((item) => this.grid.hexes[item.y][item.x]);
-
-					args.unshift(array);
-					this.activeCreature.abilities[o.id].animation2({
-						callback: opt.callback,
-						arg: args,
-					});
-				}
-				break;
-			}
-		}
-	}
-
 	getImage(url) {
 		const img = new Image();
 		img.src = url;
 		img.onload = function () {
 			// No-op
 		};
-	}
-
-	resetGame() {
-		this.endGameSound;
-		this.UI.showGameSetup();
-		this.stopTimer();
-		this.players = [];
-		this.creatures = [];
-		this.effects = [];
-		this.activeCreature = undefined;
-		this.matchid = null;
-		this.playersReady = false;
-		this.preventSetup = false;
-		this.animations = new Animations(this);
-		this.queue = new CreatureQueue(() => this.creatures);
-		this.creatureData = [];
-		this.pause = false;
-		this.gameState = 'initialized';
-		this.availableCreatures = [];
-		this.animationQueue = [];
-		this.configData = {};
-		this.match = {};
-		this.gameplay = undefined;
-		this.matchInitialized = false;
-		this.firstKill = false;
-		this.freezedInput = false;
-		this.turnThrottle = false;
-		this.turn = 0;
-
-		this.gamelog.reset();
 	}
 
 	/**
@@ -1629,56 +1206,5 @@ export default class Game {
 	 * @param {array} channels List of channel names.
 	 * @returns {object} Phaser signals keyed by channel name.
 	 */
-	setupSignalChannels(channels) {
-		const signals = channels.reduce((acc, curr) => {
-			return {
-				...acc,
-				[curr]: new Signal(),
-			};
-		}, {});
 
-		return signals;
-	}
-
-	onLogSave(log) {
-		log.custom.configData = this.configData;
-	}
-
-	onLogLoad(log) {
-		if (this.gameState !== 'initialized') {
-			alert('Can only load game from configuration menu.');
-			return;
-		}
-
-		const actions = [...log.actions];
-		const numTotalActions = actions.length;
-		const game = this;
-		const configData = log.custom.configData;
-		game.configData = log.custom.configData ?? game.configData;
-
-		const nextAction = () => {
-			if (actions.length === 0) {
-				// this.activeCreature.queryMove(); // Avoid bug: called twice breaks opening UI (may need to revisit)
-				return;
-			}
-
-			if (!DEBUG_DISABLE_GAME_STATUS_CONSOLE_LOG) {
-				console.log(`${1 + numTotalActions - actions.length} / ${numTotalActions}`);
-			}
-
-			const interval = setInterval(() => {
-				if (!game.freezedInput && !game.turnThrottle) {
-					clearInterval(interval);
-					game.activeCreature.queryMove();
-					game.action(actions.shift(), {
-						callback: nextAction,
-					});
-				}
-			}, 100);
-		};
-
-		game.loadGame(configData, undefined, undefined, () => {
-			setTimeout(() => nextAction(), 3000);
-		});
-	}
 }

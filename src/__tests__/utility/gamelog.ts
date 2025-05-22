@@ -1,6 +1,6 @@
 import { jest, expect, describe, test } from '@jest/globals';
-import { full } from '../../utility/version';
-import { GameLog } from '../../utility/gamelog';
+import { full } from '../../utils/version';
+import { GameLog } from '../../utils/gamelog';
 
 describe('GameLog', () => {
 	describe('new GameLog(onSave, onLoad)', () => {

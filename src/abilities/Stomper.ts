@@ -1,10 +1,10 @@
 import { Damage } from '../damage';
-import { Team } from '../utility/team';
-import { Hex } from '../utility/hex';
-import * as matrices from '../utility/matrices';
-import { Effect } from '../effect';
+import { Team } from '../utils/team';
+import { Hex } from '../utils/hex';
+import * as matrices from '../utils/matrices';
+import { Effect } from '../core/effect';
 import Game from '../game';
-import { Creature } from '../creature';
+import { Creature } from '../core/creature';
 
 /** Creates the abilities
  * @param {Object} G the game object

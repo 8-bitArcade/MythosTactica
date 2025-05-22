@@ -1,12 +1,12 @@
 import { Damage } from '../damage';
-import { Team } from '../utility/team';
-import * as matrices from '../utility/matrices';
-import * as arrayUtils from '../utility/arrayUtils';
-import { Effect } from '../effect';
+import { Team } from '../utils/team';
+import * as matrices from '../utils/matrices';
+import * as arrayUtils from '../utils/arrayUtils';
+import { Effect } from '../core/effect';
 import Game from '../game';
-import { Creature } from '../creature';
-import { Hex } from '../utility/hex';
-import { Trap } from '../utility/trap';
+import { Creature } from '../core/creature';
+import { Hex } from '../utils/hex';
+import { Trap } from '../utils/trap';
 
 /*
  *TODO

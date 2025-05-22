@@ -1,4 +1,4 @@
-import { Creature } from '../creature';
+import { Creature } from '../core/creature';
 import { jest, expect, describe, test, beforeEach, beforeAll } from '@jest/globals';
 
 // NOTE: ts-comments are necessary in this file to avoid mocking the entire game.

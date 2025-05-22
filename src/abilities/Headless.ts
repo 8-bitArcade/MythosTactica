@@ -1,7 +1,7 @@
 import { Damage } from '../damage';
-import { isTeam, Team } from '../utility/team';
-import * as matrices from '../utility/matrices';
-import { Effect } from '../effect';
+import { isTeam, Team } from '../utils/team';
+import * as matrices from '../utils/matrices';
+import { Effect } from '../core/effect';
 import Game from '../game';
 
 /** Creates the abilities

@@ -1,5 +1,5 @@
 import { expect, describe, test, beforeEach } from '@jest/globals';
-import { PointFacade } from '../../utility/pointfacade';
+import { PointFacade } from '../../utils/pointFacade';
 
 // NOTE: ts-comments are necessary in this file to avoid mocking the entire game.
 /* eslint-disable @typescript-eslint/ban-ts-comment */

@@ -124,6 +124,41 @@ this.physics.add.collider(player, platforms);
 
 ## Migration Tasks
 
+### Import Path Refactor (Step-by-Step)
+
+#### Rationale
+To align with Phaser 3 conventions and improve maintainability, all imports in `src/game.ts` were updated to use a logical folder structure. This prepares the codebase for modular scene-based architecture and easier future refactoring.
+
+#### Mapping Table
+| Old Import Path | New Import Path |
+|----------------|----------------|
+| ./animations | ./systems/animations |
+| ./creature_queue | ./systems/creatureQueue |
+| ./utility/gamelog | ./utils/gamelog |
+| ./sound/soundsys | ./systems/soundSys |
+| ./sound/musicplayer | ./systems/musicPlayer |
+| ./utility/hex | ./utils/hex |
+| ./utility/hexgrid | ./utils/hexGrid |
+| ./player | ./core/player |
+| ./creature | ./core/creature |
+| ./utility/time | ./utils/time |
+| ./debug | ./core/debug |
+| ./utility/pointfacade | ./utils/pointFacade |
+| ./utility/version | ./core/version |
+| ./ability | ./core/ability |
+| ./effect | ./core/effect |
+| ./script | ./core/script |
+| ./utility/trap | ./utils/trap |
+| ./drop | ./core/drop |
+| ./sound/soundsys (setAudioMode) | ./systems/soundSys |
+
+> **Note:** Asset, data, UI, and multiplayer imports were already logically placed.
+
+#### Next Steps for File Structure
+- Move each file to its new folder as reflected in the mapping table above.
+- Update any other files that import these modules to use the new paths.
+- Remove unused or legacy imports as you continue migration.
+
 ### Phase 1: Setup & Configuration
 - [ ] Set up Phaser 3 with TypeScript
 - [ ] Configure Webpack for Phaser 3
