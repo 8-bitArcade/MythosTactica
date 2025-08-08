@@ -1,15 +1,23 @@
 import { DEBUG } from './debug';
-import { phaserAutoloadAssetPaths, assetPaths } from '../assets/index';
+import Phaser from 'phaser';
+
+// Import assets from the webpack-generated JavaScript file
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { phaserAutoloadAssetPaths, assetPaths } = require('../assets/index.js') as {
+	phaserAutoloadAssetPaths: Record<string, string>;
+	assetPaths: Record<string, string>;
+};
 
 /**
- * Load all assets in phaserAutoloadAssetsPaths into Phaser Game instance, using URL basename as Phaser key.
+ * Load all assets in phaserAutoloadAssetsPaths into Phaser 3 Scene loader, using URL basename as Phaser key.
  *
- * @param {Phaser.Game} e.g., units/shouts/Chimera
- * @returns {void}
+ * @param {Phaser.Scene} scene - The Phaser 3 scene with the loader
+ * @returns {Array<{key: string, url: string, path: string}>} Array of loaded asset information
  * @throws Throws an error if two files have the same basename.
  */
-export function use(phaser: Phaser.Game): void {
+export function use(scene: Phaser.Scene): Array<{key: string, url: string, path: string}> {
 	const assets = Object.entries(phaserAutoloadAssetPaths ?? {});
+	const loadedAssets: Array<{key: string, url: string, path: string}> = [];
 
 	const loadedKeys = new Set<string>();
 
@@ -23,9 +31,21 @@ export function use(phaser: Phaser.Game): void {
 			continue;
 		}
 
-		phaser.load.image(key, url);
+		// Type assertion for url since it comes from webpack's require() calls
+		scene.load.image(key, url as string);
 		loadedKeys.add(key);
+		loadedAssets.push({ key, url: url as string, path });
 	}
+
+	return loadedAssets;
+}
+
+/**
+ * Legacy function for Phaser CE compatibility - redirects to scene-based loading
+ * @deprecated Use the scene-based version instead
+ */
+export function useLegacy(phaser: Phaser.Game): void {
+	console.warn('useLegacy is deprecated, use scene-based asset loading instead');
 }
 
 /**

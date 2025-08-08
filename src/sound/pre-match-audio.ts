@@ -4,9 +4,8 @@ import { getUrl } from '../assets';
 // so that it respects user volume preferences held there.
 export class PreMatchAudioPlayer {
 	beastAudio: HTMLAudioElement;
-
 	constructor() {
-		this.beastAudio = new Audio(getUrl('sounds/MythosTactica'));
+		this.beastAudio = new Audio(getUrl('sounds/AncientBeast'));
 	}
 
 	playBeast() {

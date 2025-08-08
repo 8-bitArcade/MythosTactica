@@ -1,8 +1,15 @@
+/**
+ * Pathfinding utilities for hex grids.
+ * Implements A* search for finding paths between hexes.
+ * @module pathfinding
+ */
 import * as arrayUtils from './arrayUtils';
 import { Hex } from './hex';
 import { HexGrid } from './hexgrid';
 
 /**
+ * Finds a path between two hexes using A* search.
+ *
  * @param {Hex} start - Starting point of search
  * @param {Hex} end - Ending point of search
  * @param {number} creatureSize - The size of the creature who will walk the searched path

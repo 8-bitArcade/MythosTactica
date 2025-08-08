@@ -1,5 +1,3 @@
-import * as $j from 'jquery';
-
 export const ButtonStateEnum = {
 	normal: 'normal',
 	disabled: 'disabled',
@@ -17,32 +15,40 @@ export const ButtonStateEnum = {
 export function buttonSlide() {
 	let dragging = false;
 
-	$j(document).ready(function () {
-		$j('.typeRadio').each(function () {
+	document.addEventListener('DOMContentLoaded', function () {
+		const typeRadioElements = document.querySelectorAll('.typeRadio');
+		
+		typeRadioElements.forEach(function (typeRadio) {
 			let selectedRadio;
 
-			const radioInputs = $j(this).find('.dragIt');
-			selectedRadio = $j(this).find('input[type=radio]:checked');
+			const radioInputs = typeRadio.querySelectorAll('.dragIt');
+			selectedRadio = typeRadio.querySelector('input[type=radio]:checked');
 
 			// Check clicked button
-			radioInputs.each(function () {
-				$j(this).on('mousedown', () => {
+			radioInputs.forEach(function (element) {
+				element.addEventListener('mousedown', () => {
 					dragging = true;
-					$j(this).prev('input[type=radio]').prop('checked', true);
-					selectedRadio = $j(this).prev('input[type=radio]');
+					const prevInput = element.previousElementSibling as HTMLInputElement;
+					if (prevInput && prevInput.type === 'radio') {
+						prevInput.checked = true;
+						selectedRadio = prevInput;
+					}
 				});
 
 				// Check hovered button
-				$j(this).on('mouseover', () => {
+				element.addEventListener('mouseover', () => {
 					if (dragging) {
-						selectedRadio.prop('checked', false);
-						$j(this).prev('input[type=radio]').prop('checked', true);
+						if (selectedRadio) selectedRadio.checked = false;
+						const prevInput = element.previousElementSibling as HTMLInputElement;
+						if (prevInput && prevInput.type === 'radio') {
+							prevInput.checked = true;
+						}
 					}
 				});
 			});
 		});
 
-		$j(document).on('mouseup', () => {
+		document.addEventListener('mouseup', () => {
 			dragging = false;
 		});
 	});
@@ -66,10 +72,10 @@ export class Button {
 	resolveTransitionTask: null;
 	stateTransitionMeta: { transitionClass: any };
 	resolveCssTransitionTask: any;
+	abilityId?: number; // Optional property for ability buttons
 	click() {
 		throw new Error('Method not implemented.');
-	}
-	/**
+	}	/**
 	 * Constructor - Create attributes and default buttons
 	 * @constructor
 	 * @param {Object} opts - Options
@@ -104,8 +110,8 @@ export class Button {
 			},
 		};
 
-		opts = $j.extend(defaultOpts, opts);
-		$j.extend(this, opts);
+		opts = Object.assign(defaultOpts, opts);
+		Object.assign(this, opts);
 		this.changeState(this.state);
 
 		// Used in applying and removing CSS transitions
@@ -114,21 +120,20 @@ export class Button {
 		};
 		this.resolveCssTransition = null;
 	}
-
-	changeState(state) {
-		const wrapperElement = this.$button.parent();
-
+	changeState(state?: ButtonState) {
+		const wrapperElement = this.$button.parentElement;
 		state = state || this.state;
 		this.state = state;
-		this.$button
-			.unbind('click')
-			.unbind('mouseover')
-			.unbind('touchstart')
-			.unbind('touchend')
-			.unbind('mouseleave');
+		
+		// Remove all event listeners
+		const newButton = this.$button.cloneNode(true);
+		if (this.$button.parentNode) {
+			this.$button.parentNode.replaceChild(newButton, this.$button);
+			this.$button = newButton;
+		}
 
 		if (!['disabled', 'hidden'].includes(this.state)) {
-			this.$button.bind('click', () => {
+			this.$button.addEventListener('click', () => {
 				if (!this.overridefreeze) {
 					if (!this.isGameAcceptingInput || !this.clickable) {
 						return;
@@ -139,7 +144,7 @@ export class Button {
 			});
 		}
 
-		this.$button.bind('mouseover', () => {
+		this.$button.addEventListener('mouseover', () => {
 			if (!this.overridefreeze) {
 				if (!this.isGameAcceptingInput || !this.clickable) {
 					return;
@@ -147,26 +152,26 @@ export class Button {
 			}
 
 			if (this.hasShortcut) {
-				this.$button.addClass('hover');
+				this.$button.classList.add('hover');
 			}
 
 			this.mouseover();
 		});
 
-		this.$button.bind('mouseleave', () => {
+		this.$button.addEventListener('mouseleave', () => {
 			if (!this.overridefreeze) {
 				if (!this.isGameAcceptingInput || !this.clickable) {
 					return;
 				}
 			}
 			if (this.hasShortcut) {
-				this.$button.removeClass('hover');
+				this.$button.classList.remove('hover');
 			}
 
 			this.mouseleave();
 		});
 
-		this.$button.bind('touchstart', (event) => {
+		this.$button.addEventListener('touchstart', (event) => {
 			event.preventDefault();
 			event.stopPropagation();
 			if (!this.overridefreeze) {
@@ -176,14 +181,14 @@ export class Button {
 			}
 
 			if (this.hasShortcut) {
-				this.$button.addClass('hover');
+				this.$button.classList.add('hover');
 			}
 
 			this.touchX = event.changedTouches[0].pageX;
 			this.touchY = event.changedTouches[0].pageY;
 		});
 
-		this.$button.bind('touchend', (event) => {
+		this.$button.addEventListener('touchend', (event) => {
 			event.preventDefault();
 			event.stopPropagation();
 			if (!this.overridefreeze) {
@@ -193,7 +198,7 @@ export class Button {
 			}
 
 			if (this.hasShortcut) {
-				this.$button.removeClass('hover');
+				this.$button.classList.remove('hover');
 			}
 
 			if (
@@ -204,18 +209,22 @@ export class Button {
 			}
 		});
 
-		this.$button.removeClass('disabled glowing selected active noclick slideIn hidden');
-		wrapperElement && wrapperElement.removeClass('hidden');
-		this.$button.css(this.css.normal);
+		this.$button.classList.remove('disabled', 'glowing', 'selected', 'active', 'noclick', 'slideIn', 'hidden');
+		if (wrapperElement) {
+			wrapperElement.classList.remove('hidden');
+		}
+		
+		// Apply normal CSS
+		Object.assign(this.$button.style, this.css.normal);
 
 		if (state === ButtonStateEnum.hidden) {
-			if (wrapperElement && wrapperElement.attr('id').includes(this.$button.attr('id'))) {
-				wrapperElement.addClass('hidden');
+			if (wrapperElement && wrapperElement.id && this.$button.id && wrapperElement.id.includes(this.$button.id)) {
+				wrapperElement.classList.add('hidden');
 			}
 		}
 		if (state !== ButtonStateEnum.normal) {
-			this.$button.addClass(state);
-			this.$button.css(this.css[state]);
+			this.$button.classList.add(state);
+			Object.assign(this.$button.style, this.css[state]);
 		}
 	}
 	mouseover() {
@@ -224,7 +233,6 @@ export class Button {
 	mouseleave() {
 		throw new Error('Method not implemented.');
 	}
-
 	/**
 	 * Apply a CSS class on a button for a duration
 	 * Useful for flashing a different icon etc for a certain period of time
@@ -233,15 +241,15 @@ export class Button {
 	 */
 	cssTransition(transitionClass, transitionMs) {
 		const resolveCssTransitionTask = () => {
-			this.$button.removeClass(transitionClass);
+			this.$button.classList.remove(transitionClass);
 			this.resolveTransitionTask = null;
 		};
 
 		// Check if the metadata matches, if not then you start the transition immediately, otherwise
 		// preserve previous triggers but extend duration
 		if (this.cssTransitionMeta.transitionClass !== transitionClass) {
-			this.$button.removeClass(this.cssTransitionMeta.transitionClass);
-			this.$button.addClass(transitionClass);
+			this.$button.classList.remove(this.cssTransitionMeta.transitionClass);
+			this.$button.classList.add(transitionClass);
 			this.stateTransitionMeta = {
 				transitionClass,
 			};

@@ -1,4 +1,4 @@
-import { unitData } from './units';
+import { unitData } from './UnitData';
 
 export type UnitData = typeof unitData;
 

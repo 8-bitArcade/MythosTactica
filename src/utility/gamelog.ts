@@ -1,3 +1,8 @@
+/**
+ * Game log utilities and classes for serializing and managing game actions and logs.
+ * @module gamelog
+ */
+
 import * as version from './version';
 import { throttle } from 'underscore';
 

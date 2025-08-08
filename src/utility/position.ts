@@ -1,14 +1,18 @@
+/**
+ * Utility for determining direction from coordinate deltas on a hex grid.
+ * @module position
+ */
 import { Direction } from './hex';
 
 /**
- * Return a direction number given a delta x/y
- * Deltas in [-1, 1] should be used, but due to creature size, x can be greater
- * - delta x will be clamped for the calculation.
- * Due to the hex grid, the starting y coordinate matters.
- * @param y - y coordinate to calculate from
- * @param dx - delta x
- * @param dy - delta y, in range [-1, 1]
- * @return the direction number
+ * Return a direction number given a delta x/y.
+ * Deltas in [-1, 1] should be used, but due to creature size, x can be greater.
+ * Delta x will be clamped for the calculation. Due to the hex grid, the starting y coordinate matters.
+ *
+ * @param {number} y - y coordinate to calculate from
+ * @param {number} dx - delta x
+ * @param {number} dy - delta y, in range [-1, 1]
+ * @returns {Direction} The direction number
  */
 
 export function getDirectionFromDelta(y: number, dx: number, dy: number): Direction {

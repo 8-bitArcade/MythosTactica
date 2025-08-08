@@ -2,7 +2,7 @@ import { Damage } from '../damage';
 import { Team } from '../utility/team';
 import * as matrices from '../utility/matrices';
 import * as arrayUtils from '../utility/arrayUtils';
-import { Effect } from '../effect';
+import { Effect } from '../models/Effect';
 import { getDirectionFromDelta } from '../utility/position';
 import Game from '../game';
 
@@ -11,7 +11,7 @@ import Game from '../game';
  * @return {void}
  */
 export default (G: Game) => {
-	G.abilities[3] = [
+	G.playerManager.abilities[3] = [
 		// First Ability: Toxic Spores
 		{
 			// Type : Can be "onQuery", "onStartPhase", "onDamage"
@@ -70,7 +70,7 @@ export default (G: Game) => {
 
 				target.addEffect(effect, undefined, 'Contaminated');
 
-				G.log(
+				G.gameManager.log(
 					'%CreatureName' + target.id + "%'s regrowth is lowered by " + this.effects[0].regrowth,
 				);
 
@@ -116,9 +116,8 @@ export default (G: Game) => {
 			},
 
 			// activate() :
-			activate: function (target) {
-				this.end();
-				G.Phaser.camera.shake(0.01, 65, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+			activate: function (target) {				this.end();
+				G.cameraShake(0.01, 65, true, 'HORIZONTAL', true);
 
 				const damage = new Damage(
 					this.creature, // Attacker
@@ -184,7 +183,7 @@ export default (G: Game) => {
 			require: function () {
 				// Must be able to move
 				if (!this.creature.stats.moveable) {
-					this.message = G.msg.abilities.notMoveable;
+					this.message = G.msg.playerManager.abilities.notMoveable;
 					return false;
 				}
 				return this.testRequirements() && this.creature.stats.moveable;
@@ -211,8 +210,8 @@ export default (G: Game) => {
 								y: hex.y,
 								overlayClass: 'creature moveto selected player' + uncle.team,
 							});
-							hex.game.activeCreature.faceHex(hex);
-							const crea = G.retrieveCreatureStats(uncle.type);
+							hex.game.playerManager.activeCreature.faceHex(hex);
+							const crea = G.creatureManager.retrieveCreatureStats(uncle.type);
 							G.grid.previewCreature(hex.pos, crea, uncle.player);
 						}
 					},
@@ -225,7 +224,7 @@ export default (G: Game) => {
 							return;
 						}
 						this.animation(...args);
-						chosenHex.game.activeCreature.faceHex(chosenHex);
+						chosenHex.game.playerManager.activeCreature.faceHex(chosenHex);
 						G.grid.fadeOutTempCreature();
 					},
 					size: uncle.size,
@@ -261,17 +260,16 @@ export default (G: Game) => {
 				this.creature.moveTo(hex, {
 					ignoreMovementPoint: true,
 					ignorePath: true,
-					callback: () => {
-						// Shake the screen upon landing to simulate the jump
-						G.Phaser.camera.shake(0.03, 90, true, G.Phaser.camera.SHAKE_VERTICAL, true);
+					callback: () => {						// Shake the screen upon landing to simulate the jump
+						G.cameraShake(0.03, 90, true, 'VERTICAL', true);
 
-						G.onStepIn(this.creature, this.creature.hexagons[0], false);
+						G.trapManager.onStepIn(this.creature, this.creature.hexagons[0], false);
 
 						const interval = setInterval(function () {
 							if (!G.freezedInput) {
 								clearInterval(interval);
 								G.UI.selectAbility(-1);
-								G.activeCreature.queryMove();
+								G.playerManager.activeCreature.queryMove();
 							}
 						}, 100);
 					},
@@ -374,9 +372,8 @@ export default (G: Game) => {
 			},
 
 			// activate() :
-			activate: function (target) {
-				this.end();
-				G.Phaser.camera.shake(0.03, 100, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+			activate: function (target) {				this.end();
+				G.cameraShake(0.03, 100, true, 'HORIZONTAL', true);
 
 				const damage = new Damage(
 					this.creature, // Attacker
@@ -398,7 +395,7 @@ export default (G: Game) => {
 					if (hexes.length >= 2 && hexes[1].isWalkable(target.size, target.id, true)) {
 						target.moveTo(hexes[1], {
 							callback: function () {
-								G.activeCreature.queryMove();
+								G.playerManager.activeCreature.queryMove();
 							},
 							ignoreMovementPoint: true,
 							ignorePath: true,

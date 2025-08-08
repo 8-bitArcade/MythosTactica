@@ -1,104 +1,96 @@
-import * as $j from 'jquery';
+
+import { $ } from '../script';
 
 type ProgressBarOptions = {
 	height: number;
 	width: number;
 	color: string;
-	$bar: any;
+	$bar: HTMLElement | null;
 };
 
 export class ProgressBar {
-	$bar: any;
-	$preview: any;
-	$current: any;
+	$bar: HTMLElement | null;
+	$preview: HTMLElement | null;
+	$current: HTMLElement | null;
 	width: number;
 	height: number;
 	color: string;
-
 	constructor(opts: Partial<ProgressBarOptions>) {
 		const defaultOpts: ProgressBarOptions = {
 			height: 316,
 			width: 7,
 			color: 'red',
-			$bar: undefined,
+			$bar: null,
 		};
 
 		opts = Object.assign({}, defaultOpts, opts);
-		$j.extend(this, opts);
+		// Replace jQuery extend with Object.assign
+		Object.assign(this, opts);
 
-		this.$bar.append('<div class="previewbar"></div>');
-		this.$preview = this.$bar.children('.previewbar');
+		// Create and append previewbar element
+		const previewDiv = document.createElement('div');
+		previewDiv.className = 'previewbar';
+		this.$bar?.appendChild(previewDiv);
+		this.$preview = previewDiv;
 
-		this.$bar.append('<div class="currentbar"></div>');
-		this.$current = this.$bar.children('.currentbar');
+		// Create and append currentbar element
+		const currentDiv = document.createElement('div');
+		currentDiv.className = 'currentbar';
+		this.$bar?.appendChild(currentDiv);
+		this.$current = currentDiv;
 
 		this.setSize(1);
 	}
-
 	/**
 	 * @param{number} percentage - Size between 0 and 1
 	 */
 	setSize(percentage: number) {
-		this.$bar.css({
-			width: this.width,
-			height: this.height * percentage,
+		$.css(this.$bar, {
+			width: this.width + 'px',
+			height: (this.height * percentage) + 'px',
 			border: 'solid 1px',
 			'border-color': 'transparent',
 		});
 
-		this.$current.css({
-			width: this.width,
-			height: this.height * percentage,
+		$.css(this.$current, {
+			width: this.width + 'px',
+			height: (this.height * percentage) + 'px',
 			'background-color': this.color,
 			'background-image': 'none',
 		});
 	}
-
 	/**
 	 * @param{number} percentage - size between 0 and 1
 	 */
 	animSize(percentage: number) {
-		this.$bar.transition(
-			{
-				queue: false,
-				width: this.width,
-				height: this.height * percentage,
-			},
-			500,
-			'linear',
-		);
+		// Use CSS transitions instead of jQuery transition
+		$.css(this.$bar, {
+			transition: 'all 500ms linear',
+			width: this.width + 'px',
+			height: (this.height * percentage) + 'px',
+		});
 
-		this.$current.transition(
-			{
-				queue: false,
-				width: this.width,
-				height: this.height * percentage,
-				'background-color': this.color,
-				'background-image': 'none',
-			},
-			500,
-			'linear',
-		);
+		$.css(this.$current, {
+			transition: 'all 500ms linear',
+			width: this.width + 'px',
+			height: (this.height * percentage) + 'px',
+			'background-color': this.color,
+			'background-image': 'none',
+		});
 	}
-
 	/**
 	 * @param{number} percentage - size between 0 and 1
 	 */
 	previewSize(percentage: number) {
-		this.$preview.css(
-			{
-				width: this.width,
-				height: this.height * percentage,
-				'background-image': 'none',
-			},
-			500,
-			'linear',
-		);
+		$.css(this.$preview, {
+			width: this.width + 'px',
+			height: (this.height * percentage) + 'px',
+			'background-image': 'none',
+		});
 	}
-
 	// Sets element's background-image with horizontal 2px stripe pattern
-	setStripePattern(element) {
-		element.css({
+	setStripePattern(element: HTMLElement | null) {
+		$.css(element, {
 			'background-image':
 				'linear-gradient(0deg, #000000 25%,' +
 				this.color +
@@ -118,15 +110,14 @@ export class ProgressBar {
 	setAvailableStyle() {
 		this.setStripePattern(this.$preview);
 	}
-
 	// When not enough progress is available to use
 	setUnavailableStyle() {
 		// Border only added to surround the black preview bar indicating missing progress
-		this.$bar.css({
+		$.css(this.$bar, {
 			'border-color': this.color,
 		});
 
-		this.$preview.css({
+		$.css(this.$preview, {
 			'background-image': 'none',
 			'background-color': 'black',
 		});

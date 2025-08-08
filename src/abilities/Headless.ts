@@ -1,7 +1,7 @@
 import { Damage } from '../damage';
 import { isTeam, Team } from '../utility/team';
 import * as matrices from '../utility/matrices';
-import { Effect } from '../effect';
+import { Effect } from '../models/Effect';
 import Game from '../game';
 
 /** Creates the abilities
@@ -9,7 +9,7 @@ import Game from '../game';
  * @return {void}
  */
 export default (G: Game) => {
-	G.abilities[39] = [
+	G.playerManager.abilities[39] = [
 		/**
 		 * First Ability: Larva Infest
 		 * At both the beginning and end of the Headless turn, if there is an enemy
@@ -30,7 +30,7 @@ export default (G: Game) => {
 
 			require: function () {
 				// Headless only triggers ability on its own turn.
-				if (this.creature !== this.game.activeCreature) {
+				if (this.creature !== this.game.playerManager.activeCreature) {
 					return false;
 				}
 
@@ -74,7 +74,7 @@ export default (G: Game) => {
 					G,
 				);
 				if (target.isFragile()) {
-					G.log(`%CreatureName${target.id}% is already fragile`);
+					G.gameManager.log(`%CreatureName${target.id}% is already fragile`);
 				} else if (target.endurance < 5 && target.endurance > 0) {
 					target.addEffect(
 						effect,
@@ -145,10 +145,9 @@ export default (G: Game) => {
 			},
 
 			//	activate() :
-			activate: function (target) {
-				const ability = this;
+			activate: function (target) {				const ability = this;
 				ability.end();
-				G.Phaser.camera.shake(0.01, 90, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.01, 90, true, 'HORIZONTAL', true);
 
 				const d = {
 					pierce: 11,
@@ -219,7 +218,7 @@ export default (G: Game) => {
 				}
 
 				if (!headless.stats.moveable) {
-					this.message = G.msg.abilities.notMoveable;
+					this.message = G.msg.playerManager.abilities.notMoveable;
 					return false;
 				}
 
@@ -319,7 +318,7 @@ export default (G: Game) => {
 							const interval = setInterval(function () {
 								if (!G.freezedInput) {
 									clearInterval(interval);
-									G.activeCreature.queryMove();
+									G.playerManager.activeCreature.queryMove();
 									headless.facePlayerDefault();
 								}
 							}, 100);
@@ -337,7 +336,7 @@ export default (G: Game) => {
 							const interval = setInterval(function () {
 								if (!G.freezedInput) {
 									clearInterval(interval);
-									G.activeCreature.queryMove();
+									G.playerManager.activeCreature.queryMove();
 									headless.facePlayerDefault();
 								}
 							}, 100);
@@ -401,11 +400,9 @@ export default (G: Game) => {
 			activate: function (hexes) {
 				const damages = {
 					slash: 10,
-				};
-
-				const ability = this;
+				};				const ability = this;
 				ability.end();
-				G.Phaser.camera.shake(0.02, 100, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.02, 100, true, 'HORIZONTAL', true);
 
 				ability.areaDamage(
 					ability.creature, //Attacker

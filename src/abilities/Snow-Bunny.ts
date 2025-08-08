@@ -1,4 +1,3 @@
-import * as $j from 'jquery';
 import { Damage } from '../damage';
 import { Team, isTeam } from '../utility/team';
 import * as matrices from '../utility/matrices';
@@ -22,7 +21,7 @@ const HopTriggerDirections = {
  * @return {void}
  */
 export default (G: Game) => {
-	G.abilities[12] = [
+	G.playerManager.abilities[12] = [
 		/**
 		 * First Ability: Bunny Hop
 		 * After any movement, if an enemy is newly detected in the 3 hexes in front
@@ -48,10 +47,8 @@ export default (G: Game) => {
 			require: function (hex: Hex) {
 				if (!this.testRequirements()) {
 					return false;
-				}
-
-				// This ability only triggers on other creature's turns, it's purely defensive.
-				if (this.creature === this.game.activeCreature) {
+				} // This ability only triggers on other creature's turns, it's purely defensive.
+				if (this.creature === G.playerManager.activeCreature) {
 					return false;
 				}
 				const creatureOnHex = getPointFacade().getCreaturesAt({ x: hex.x, y: hex.y })[0];
@@ -92,13 +89,12 @@ export default (G: Game) => {
 			//	activate() :
 			activate: function () {
 				const ability = this;
-
 				ability.end();
-				G.Phaser.camera.shake(0.01, 55, true, G.Phaser.camera.SHAKE_VERTICAL, true);
+				G.cameraShake(0.01, 55, true, 'VERTICAL', true);
 
 				this.creature.moveTo(this._getHopHex(), {
 					callback: function () {
-						G.activeCreature.queryMove();
+						G.playerManager.activeCreature.queryMove();
 					},
 					ignorePath: true,
 					ignoreMovementPoint: true,
@@ -264,7 +260,7 @@ export default (G: Game) => {
 			activate: function (target) {
 				const ability = this;
 				ability.end();
-				G.Phaser.camera.shake(0.01, 100, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.01, 100, true, 'HORIZONTAL', true);
 
 				const damages = ability.damages;
 				const pureDamage = {
@@ -383,12 +379,12 @@ export default (G: Game) => {
 					ignoreMovementPoint: true,
 					ignorePath: true,
 					callback: function () {
-						G.activeCreature.queryMove();
+						G.playerManager.activeCreature.queryMove();
 					},
 					animation: 'push',
 				});
 
-				G.Phaser.camera.shake(0.01, 400, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.01, 400, true, 'HORIZONTAL', true);
 
 				dir = dir.slice(0, dist + 1);
 
@@ -404,12 +400,12 @@ export default (G: Game) => {
 					ignoreMovementPoint: true,
 					ignorePath: true,
 					callback: function () {
-						G.activeCreature.queryMove();
+						G.playerManager.activeCreature.queryMove();
 					},
 					animation: 'push',
 				});
 
-				G.Phaser.camera.shake(0.01, 400, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.01, 400, true, 'HORIZONTAL', true);
 			},
 		},
 
@@ -455,13 +451,11 @@ export default (G: Game) => {
 					y: snowBunny.y,
 					directions: [1, 1, 1, 1, 1, 1],
 				});
-			},
-
-			//	activate() :
+			}, //	activate() :
 			activate: function (path, args) {
 				const ability = this;
 				ability.end();
-				G.Phaser.camera.shake(0.01, 90, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.01, 90, true, 'HORIZONTAL', true);
 
 				const hexWithTarget = path.find((hex: Hex) => {
 					const creature = getPointFacade().getCreaturesAt({ x: hex.x, y: hex.y })[0];
@@ -469,7 +463,6 @@ export default (G: Game) => {
 				});
 
 				const target = getPointFacade().getCreaturesAt(hexWithTarget.x, hexWithTarget.y)[0];
-
 				const projectileInstance = G.animations.projectile(
 					// @ts-expect-error `this.creature` exists once this file is extended into `ability.ts`
 					this,
@@ -480,21 +473,17 @@ export default (G: Game) => {
 					52,
 					-20,
 				);
-				const tween = projectileInstance[0];
-				const sprite = projectileInstance[1];
-				const dist = projectileInstance[2];
+				const tween = projectileInstance[0] as any;
+				const sprite = projectileInstance[1] as any;
+				const dist = projectileInstance[2] as number;
 
 				sprite.alpha = 0.4;
-				const fadeTween = G.Phaser.add
-					.tween(sprite)
-					.to({ alpha: 1 }, tween.duration, Phaser.Easing.Linear.None, true);
+				const fadeTween = G.createTween(sprite, { alpha: 1 }, dist * 75, null, true);
 
 				tween.onComplete.add(function () {
 					// @ts-expect-error this refers to the animation object, _not_ the ability
-					this.destroy();
-
-					// Copy to not alter ability strength
-					const dmg = $j.extend({}, ability.damages);
+					this.destroy(); // Copy to not alter ability strength
+					const dmg = Object.assign({}, ability.damages);
 					dmg.crush += 3 * dist; // Add distance to crush damage
 
 					const damage = new Damage(

@@ -24,6 +24,7 @@ module.exports = (api) => {
 					 * dead code elimination (tree shaking) and intelligently select what all to add to the bundle.
 					 */
 					modules: isTest ? 'commonjs' : false,
+					targets: { esmodules: true },
 				},
 			],
 		],

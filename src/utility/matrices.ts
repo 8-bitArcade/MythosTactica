@@ -1,12 +1,31 @@
+/**
+ * Utility types and constants for working with matrices and grid patterns.
+ * @module matrices
+ */
+
 type MatrixOrigin = [number, number];
 type Matrix = number[][];
+
+/**
+ * AugmentedMatrix is a matrix with an origin property.
+ */
 export type AugmentedMatrix = number[][] & { origin: MatrixOrigin };
 
-const asAugmentedMatrix = (m: Matrix, origin: [number, number]) => {
+/**
+ * Helper to attach an origin to a matrix.
+ * @param {Matrix} m - The matrix.
+ * @param {[number, number]} origin - The origin coordinates.
+ * @returns {AugmentedMatrix} The augmented matrix.
+ */
+const asAugmentedMatrix = (m: Matrix, origin: [number, number]): AugmentedMatrix => {
 	(m as any).origin = origin;
 	return m as AugmentedMatrix;
 };
 
+/**
+ * Various predefined matrix patterns for grid operations.
+ * Each exported constant is an AugmentedMatrix with a specific pattern and origin.
+ */
 export const diagonalup: AugmentedMatrix = asAugmentedMatrix(
 	[
 		[0, 0, 0, 0, 1], // Origin line

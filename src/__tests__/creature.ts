@@ -1,4 +1,4 @@
-import { Creature } from '../creature';
+import { Creature } from '../models/Creature';
 import { jest, expect, describe, test, beforeEach, beforeAll } from '@jest/globals';
 
 // NOTE: ts-comments are necessary in this file to avoid mocking the entire game.
@@ -18,7 +18,7 @@ describe('Creature', () => {
 			expect(creature0).toBeDefined();
 			expect(creature1).toBeDefined();
 			expect(creature0.id).not.toBe(creature1.id);
-			expect(game.creatures.length).toBe(2);
+			expect(game.creatureManager.creatures.length).toBe(2);
 		});
 
 		test('a "materialized" (not temp) creature will reuse an existing, matching "unmaterialized" creature id', () => {
@@ -33,8 +33,8 @@ describe('Creature', () => {
 		});
 	});
 
-	describe('game.creatures', () => {
-		test('a "materialized" creature will replace a matching "unmaterialized" creature in game.creatures', () => {
+	describe('game.creatureManager.creatures', () => {
+		test('a "materialized" creature will replace a matching "unmaterialized" creature in game.creatureManager.creatures', () => {
 			const game = getGameMock();
 			const obj = getCreatureObjMock();
 			obj.temp = true;
@@ -251,7 +251,7 @@ const getHexesMock = () => {
 	return arr;
 };
 
-import { unitData } from '../data/units';
+import { unitData } from '../data/UnitData';
 import Game from '../game';
 
 const getGameMock = () => {

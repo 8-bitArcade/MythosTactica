@@ -9,7 +9,7 @@ import Game from '../game';
  * @return {void}
  */
 export default (G: Game) => {
-	G.abilities[45] = [
+	G.playerManager.abilities[45] = [
 		// 	First Ability: Cyclic Duality
 		{
 			trigger: 'onReset',
@@ -252,7 +252,7 @@ export default (G: Game) => {
 						return true;
 					}
 				}
-				this.message = G.msg.abilities.noTarget;
+				this.message = G.playerManager.msg.playerManager.abilities.noTarget;
 				return false;
 			},
 
@@ -277,10 +277,9 @@ export default (G: Game) => {
 				});
 			},
 
-			activate: function (path, args) {
-				const ability = this;
+			activate: function (path, args) {			const ability = this;
 				this.end();
-				G.Phaser.camera.shake(0.02, 300, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.02, 300, true, 'HORIZONTAL', true);
 
 				const knockback = (_target, _crush, _range) => {
 					const damage = new Damage(
@@ -336,7 +335,7 @@ export default (G: Game) => {
 							const range = ability.isUpgraded() ? _range : _range - 1;
 							knockback(nextHex.creature, crush, range);
 						} else {
-							G.activeCreature.queryMove();
+							G.playerManager.activeCreature.queryMove();
 						}
 					};
 

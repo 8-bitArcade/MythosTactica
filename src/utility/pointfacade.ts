@@ -1,13 +1,24 @@
-import { Creature } from '../creature';
-import { Drop } from '../drop';
+/**
+ * Provides a facade for working with points, creatures, traps, and drops on the grid.
+ * Includes types and classes for point normalization and set operations.
+ * @module pointfacade
+ */
+import { Creature } from '../models/Creature';
+import { Drop } from '../models/Drop';
 import { hashOffsetCoords as hash } from './const';
-import { Trap } from './trap';
+import { Trap } from '../models/Trap';
 
+/**
+ * Represents a point on the grid.
+ */
 export type Point = {
 	x: number;
 	y: number;
 };
 
+/**
+ * Configuration for PointFacade, providing accessors for creatures, traps, and drops.
+ */
 type PointFacadeConfig = {
 	getCreatures: () => Creature[];
 	getCreaturePassablePoints: (creature: Creature) => Point[];
@@ -22,16 +33,29 @@ type PointFacadeConfig = {
 	getDropBlockedPoints: (drop: Drop) => Point[];
 };
 
+/**
+ * Set-like class for working with points, using a hash for fast lookup.
+ */
 class PointSet {
 	s: Set<number>;
 	config: PointFacadeConfig;
 
+	/**
+	 * @param {Set<number>} s - Set of hashed points.
+	 * @param {PointFacadeConfig} config - Configuration for point normalization.
+	 */
 	constructor(s: Set<number>, config: PointFacadeConfig) {
 		this.s = s;
 		this.config = config;
 	}
 
-	has(point: Point | Point[] | Creature | number, y = 0) {
+	/**
+	 * Checks if the set contains the given point(s), creature, or hash.
+	 * @param {Point | Point[] | Creature | number} point - The point(s), creature, or hash to check.
+	 * @param {number} [y=0] - Optional y coordinate if point is (x, y).
+	 * @returns {boolean} True if any of the points are in the set.
+	 */
+	has(point: Point | Point[] | Creature | number, y = 0): boolean {
 		const points = normalize(point, y, this.config);
 		for (const point of points) {
 			if (this.s.has(hash(point))) {
@@ -42,9 +66,16 @@ class PointSet {
 	}
 }
 
+/**
+ * Facade for working with points and their relationships to creatures, traps, and drops.
+ */
 export class PointFacade {
 	private config: PointFacadeConfig;
 
+	/**
+	 * @param {PointFacadeConfig} config - Configuration for point accessors.
+	 * @throws {Error} If config is invalid.
+	 */
 	constructor(config: PointFacadeConfig) {
 		if (!canBuild(config)) {
 			/**
@@ -60,6 +91,10 @@ export class PointFacade {
 		this.config = config;
 	}
 
+	/**
+	 * Gets a set of blocked points from creatures, traps, and drops.
+	 * @returns {PointSet} A set-like object containing blocked points.
+	 */
 	getBlockedSet(): PointSet {
 		const blockedSet = new Set<number>();
 		for (const c of this.config.getCreatures()) {
@@ -80,11 +115,23 @@ export class PointFacade {
 		return new PointSet(blockedSet, this.config);
 	}
 
+	/**
+	 * Checks if a point is blocked by creatures, traps, or drops.
+	 * @param {Point | Creature | Point[] | number} point - The point, creature, or hash to check.
+	 * @param {number} [y=0] - Optional y coordinate if point is (x, y).
+	 * @returns {boolean} True if the point is blocked.
+	 */
 	isBlocked(point: Point | Creature | Point[] | number, y = 0) {
 		const point_ = normalize(point, y, this.config);
 		return this.getBlockedSet().has(point_);
 	}
 
+	/**
+	 * Gets creatures at a specific point, including those that are blocked or passable.
+	 * @param {Point | Creature | Point[] | number} point - The point, creature, or hash to check.
+	 * @param {number} [y=0] - Optional y coordinate if point is (x, y).
+	 * @returns {Creature[]} Array of creatures at the point.
+	 */
 	getCreaturesAt(point: Point | Creature | Point[] | number, y = 0) {
 		const config = this.config;
 
@@ -103,6 +150,12 @@ export class PointFacade {
 			);
 	}
 
+	/**
+	 * Gets traps at a specific point, including those that are blocked or passable.
+	 * @param {Point | Creature | Point[] | number} point - The point, creature, or hash to check.
+	 * @param {number} [y=0] - Optional y coordinate if point is (x, y).
+	 * @returns {Trap[]} Array of traps at the point.
+	 */
 	getTrapsAt(point: Point | Creature | Point[] | number, y = 0) {
 		const config = this.config;
 
@@ -121,6 +174,12 @@ export class PointFacade {
 			);
 	}
 
+	/**
+	 * Gets drops at a specific point, including those that are blocked or passable.
+	 * @param {Point | Creature | Point[] | number} point - The point, creature, or hash to check.
+	 * @param {number} [y=0] - Optional y coordinate if point is (x, y).
+	 * @returns {Drop[]} Array of drops at the point.
+	 */
 	getDropsAt(point: Point | Creature | Point[] | number, y = 0) {
 		const config = this.config;
 

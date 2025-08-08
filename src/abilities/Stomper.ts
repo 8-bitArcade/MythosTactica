@@ -2,16 +2,16 @@ import { Damage } from '../damage';
 import { Team } from '../utility/team';
 import { Hex } from '../utility/hex';
 import * as matrices from '../utility/matrices';
-import { Effect } from '../effect';
+import { Effect } from '../models/Effect';
 import Game from '../game';
-import { Creature } from '../creature';
+import { Creature } from '../models/Creature';
 
 /** Creates the abilities
  * @param {Object} G the game object
  * @return {void}
  */
 export default (G: Game) => {
-	G.abilities[28] = [
+	G.playerManager.abilities[28] = [
 		//  First Ability: Tankish Build
 		{
 			// Type : Can be "onQuery", "onStartPhase", "onDamage"
@@ -170,10 +170,9 @@ export default (G: Game) => {
 				);
 
 				// If not upgraded take the first creature found (aka last in path)
-				if (!this.isUpgraded()) {
-					const targetCreature = target.find((hex) => hex.creature).creature;
+				if (!this.isUpgraded()) {					const targetCreature = target.find((hex) => hex.creature).creature;
 
-					G.Phaser.camera.shake(0.03, 400, true, G.Phaser.camera.SHAKE_VERTICAL, true);
+					G.cameraShake(0.03, 400, true, 'VERTICAL', true);
 					targetCreature.takeDamage(damage);
 				} else {
 					const set: Set<Creature> = new Set();
@@ -181,9 +180,8 @@ export default (G: Game) => {
 						if (creature) {
 							set.add(creature);
 						}
-					});
-					set.forEach((creature) => {
-						G.Phaser.camera.shake(0.03, 400, true, G.Phaser.camera.SHAKE_VERTICAL, true);
+					});					set.forEach((creature) => {
+						G.cameraShake(0.03, 400, true, 'VERTICAL', true);
 						creature.takeDamage(damage);
 					});
 				}
@@ -391,9 +389,8 @@ export default (G: Game) => {
 			activate: function (hexes) {
 				const ability = this;
 				const stomper = this.creature;
-				let i = 0;
-				ability.end();
-				G.Phaser.camera.shake(0.03, 400, true, G.Phaser.camera.SHAKE_VERTICAL, true);
+				let i = 0;				ability.end();
+				G.cameraShake(0.03, 400, true, 'VERTICAL', true);
 
 				const targets = ability.getTargets(hexes);
 
@@ -443,18 +440,17 @@ export default (G: Game) => {
 				// Jump directly to hex
 				ability.creature.moveTo(G.grid.hexes[stomper.y][lastTarget.x + offset], {
 					ignoreMovementPoint: true,
-					ignorePath: true,
-					callback: function () {
+					ignorePath: true,					callback: function () {
 						// Shake the screen upon landing to simulate the jump
-						G.Phaser.camera.shake(0.02, 100, true, G.Phaser.camera.SHAKE_VERTICAL, true);
+						G.cameraShake(0.02, 100, true, 'VERTICAL', true);
 
-						G.onStepIn(ability.creature, ability.creature.hexagons[0], false);
+						G.trapManager.onStepIn(ability.creature, ability.creature.hexagons[0], false);
 
 						const interval = setInterval(function () {
 							if (!G.freezedInput) {
 								clearInterval(interval);
 								G.UI.selectAbility(-1);
-								G.activeCreature.queryMove();
+								G.playerManager.activeCreature.queryMove();
 							}
 						}, 100);
 					},
@@ -493,10 +489,9 @@ export default (G: Game) => {
 			},
 
 			// activate() :
-			activate: function (hexes) {
-				const ability = this;
+			activate: function (hexes) {				const ability = this;
 				ability.end(); // Deferred ending
-				G.Phaser.camera.shake(0.03, 400, true, G.Phaser.camera.SHAKE_VERTICAL, true);
+				G.cameraShake(0.03, 400, true, 'VERTICAL', true);
 
 				// Delay all creatures in area
 				const targets = ability.getTargets(hexes);

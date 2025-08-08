@@ -1,9 +1,8 @@
-import * as $j from 'jquery';
 import { Damage } from '../damage';
 import { Team, isTeam } from '../utility/team';
 import * as matrices from '../utility/matrices';
 import * as arrayUtils from '../utility/arrayUtils';
-import { Creature } from '../creature';
+import { Creature } from '../models/Creature';
 import Game from '../game';
 import { Hex } from '../utility/hex';
 
@@ -12,7 +11,7 @@ import { Hex } from '../utility/hex';
  * @return {void}
  */
 export default (G: Game) => {
-	G.abilities[31] = [
+	G.playerManager.abilities[31] = [
 		//	First Ability: Bad Doggie
 		{
 			triggerFunc: function () {
@@ -53,7 +52,7 @@ export default (G: Game) => {
 					G,
 				);
 				target.takeDamage(damage);
-				G.Phaser.camera.shake(0.01, 123, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.01, 123, true, 'HORIZONTAL', true);
 
 				// Keep highlighted in UI
 				this.setUsed(false);
@@ -99,7 +98,7 @@ export default (G: Game) => {
 			activate: function (target: Creature) {
 				const ability = this;
 				ability.end();
-				G.Phaser.camera.shake(0.01, 150, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.01, 150, true, 'HORIZONTAL', true);
 
 				const damage = new Damage(
 					ability.creature, // Attacker
@@ -115,7 +114,7 @@ export default (G: Game) => {
 					const energySteal = Math.min(8, target.energy);
 					target.energy -= energySteal;
 					this.creature.recharge(energySteal);
-					G.log(
+					G.gameManager.log(
 						'%CreatureName' +
 							this.creature.id +
 							'% steals ' +
@@ -210,7 +209,7 @@ export default (G: Game) => {
 
 				G.grid.queryChoice({
 					fnOnCancel: function () {
-						G.activeCreature.queryMove();
+						G.playerManager.activeCreature.queryMove();
 					},
 					fnOnConfirm: function () {
 						// eslint-disable-next-line
@@ -227,7 +226,7 @@ export default (G: Game) => {
 			activate: function (choice: Hex[]) {
 				const ability = this;
 				ability.end();
-				G.Phaser.camera.shake(0.02, 350, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.02, 350, true, 'HORIZONTAL', true);
 
 				const crea = this.creature;
 
@@ -302,7 +301,7 @@ export default (G: Game) => {
 				}
 
 				if (this.token > 0) {
-					G.log('%CreatureName' + this.creature.id + '% missed ' + this.token + ' rocket(s)');
+					G.gameManager.log('%CreatureName' + this.creature.id + '% missed ' + this.token + ' rocket(s)');
 				}
 			},
 		},
@@ -349,7 +348,7 @@ export default (G: Game) => {
 			activate: function (crea: Creature) {
 				const ability = this;
 				ability.end();
-				G.Phaser.camera.shake(0.03, 333, true, G.Phaser.camera.SHAKE_VERTICAL, true);
+				G.cameraShake(0.03, 333, true, 'VERTICAL', true);
 
 				const target = crea;
 
@@ -358,18 +357,17 @@ export default (G: Game) => {
 				let rocketsToUse = rocketLauncherAbility.token;
 				if (!this.isUpgraded()) {
 					rocketsToUse = Math.min(rocketsToUse, 2);
-				}
-				rocketLauncherAbility.token -= rocketsToUse;
+				}				rocketLauncherAbility.token -= rocketsToUse;
 
 				// Multiply damage by number of rockets
-				const damages = $j.extend({}, rocketLauncherAbility.damages);
+				const damages = Object.assign({}, rocketLauncherAbility.damages);
 				for (const key in damages) {
 					if ({}.hasOwnProperty.call(damages, key)) {
 						damages[key] *= rocketsToUse;
 					}
 				}
 
-				G.log('%CreatureName' + this.creature.id + '% redirects ' + rocketsToUse + ' rocket(s)');
+				G.gameManager.log('%CreatureName' + this.creature.id + '% redirects ' + rocketsToUse + ' rocket(s)');
 				const damage = new Damage(
 					ability.creature, // Attacker
 					damages, // Damage Type

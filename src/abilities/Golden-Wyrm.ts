@@ -1,8 +1,8 @@
 import { Damage } from '../damage';
 import { Team } from '../utility/team';
 import * as matrices from '../utility/matrices';
-import { Creature } from '../creature';
-import { Effect } from '../effect';
+import { Creature } from '../models/Creature';
+import { Effect } from '../models/Effect';
 import Game from '../game';
 import { Hex } from '../utility/hex';
 
@@ -11,7 +11,7 @@ import { Hex } from '../utility/hex';
  * @return {void}
  */
 export default (G: Game) => {
-	G.abilities[33] = [
+	G.playerManager.abilities[33] = [
 		// 	First Ability: Battle Cry
 		{
 			//	Type : Can be "onQuery", "onStartPhase", "onDamage"
@@ -23,7 +23,7 @@ export default (G: Game) => {
 			// 	require() :
 			require: function () {
 				// Creature is damaged
-				if (G.activeCreature != this.creature) {
+				if (G.playerManager.activeCreature != this.creature) {
 					this._damaged = true;
 					return false;
 				}
@@ -47,11 +47,10 @@ export default (G: Game) => {
 			},
 
 			//	activate() :
-			activate: function () {
-				const creature = this.creature;
+			activate: function () {				const creature = this.creature;
 				const damage = new Damage(creature, { sonic: 30 }, this._targets.length, [], G);
 				const hits: Set<Creature> = new Set();
-				G.Phaser.camera.shake(0.02, 300, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.02, 300, true, 'HORIZONTAL', true);
 
 				this._targets.forEach((target) => {
 					if (target.creature === undefined || hits.has(target.creature)) {
@@ -123,11 +122,9 @@ export default (G: Game) => {
 					flipped: wyrm.player.flipped,
 					hexes: this._getHexes(),
 				});
-			},
-
-			activate: function (target: Creature) {
+			},			activate: function (target: Creature) {
 				this.end();
-				G.Phaser.camera.shake(0.02, 200, true, G.Phaser.camera.SHAKE_BOTH, true);
+				G.cameraShake(0.02, 200, true, 'BOTH', true);
 
 				if (target.health <= this._executeHealthThreshold) {
 					const executeDamage = new Damage(
@@ -147,7 +144,7 @@ export default (G: Game) => {
 
 					// Damage could be shielded or blocked, so double check target has died.
 					if (damageResult.kill) {
-						this.game.log(`%CreatureName${target.id}% has been executed!`);
+						this.game.gameManager.log(`%CreatureName${target.id}% has been executed!`);
 						target.hint('Executed', 'damage');
 
 						if (this.isUpgraded()) {
@@ -203,10 +200,8 @@ export default (G: Game) => {
 			require: function () {
 				if (!this.testRequirements()) {
 					return false;
-				}
-
-				if (!this.creature.stats.moveable) {
-					this.message = G.msg.abilities.notMoveable;
+				}				if (!this.creature.stats.moveable) {
+					this.message = G.msg.playerManager.abilities.notMoveable;
 					return false;
 				}
 
@@ -241,10 +236,9 @@ export default (G: Game) => {
 
 				ability.creature.moveTo(hex, {
 					ignoreMovementPoint: true,
-					ignorePath: true,
-					callback: function () {
-						G.activeCreature.queryMove();
-						G.Phaser.camera.shake(0.04, 100, true, G.Phaser.camera.SHAKE_VERTICAL, true);
+					ignorePath: true,					callback: function () {
+						G.playerManager.activeCreature.queryMove();
+						G.cameraShake(0.04, 100, true, 'VERTICAL', true);
 
 						if (ability.isUpgraded()) {
 							// Add offense buff after landing
@@ -255,7 +249,7 @@ export default (G: Game) => {
 			},
 
 			_highlightDestination: function (hex: Hex) {
-				const ghostData = this.game.retrieveCreatureStats(this.creature.type);
+				const ghostData = this.game.creatureManager.retrieveCreatureStats(this.creature.type);
 				this.game.grid.previewCreature(hex, ghostData, this.creature.player);
 				this.creature.tracePosition({
 					x: hex.x,
@@ -378,7 +372,7 @@ export default (G: Game) => {
 				this.creature.heal(-transferAmount, false, false);
 
 				// Rather than individual loss/gain health logs, show a single custom log.
-				this.game.log(
+				this.game.gameManager.log(
 					`%CreatureName${this.creature.id}% gives ${transferAmount} health to %CreatureName${target.id}%`,
 				);
 

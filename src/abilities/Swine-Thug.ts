@@ -1,14 +1,14 @@
-import * as $j from 'jquery';
+
 import { Damage } from '../damage';
 import { Team } from '../utility/team';
 import * as matrices from '../utility/matrices';
 import * as arrayUtils from '../utility/arrayUtils';
-import { Effect } from '../effect';
-import { Creature } from '../creature';
+import { Effect } from '../models/Effect';
+import { Creature } from '../models/Creature';
 import Game from '../game';
 import { Hex } from '../utility/hex';
 import { getPointFacade } from '../utility/pointfacade';
-import { Trap } from '../utility/trap';
+import { Trap } from '../models/Trap';
 
 /*
  *TODO
@@ -29,7 +29,7 @@ export default (G: Game) => {
 	 *	Swine Thug abilities
 	 *
 	 */
-	G.abilities[37] = [
+	G.playerManager.abilities[37] = [
 		// 	First Ability: Spa Goggles
 		{
 			//	Type : Can be "onQuery", "onStartPhase", "onDamage"
@@ -63,11 +63,9 @@ export default (G: Game) => {
 				});
 
 				return false;
-			},
-
-			//	activate() :
+			},			//	activate() :
 			activate: function () {
-				const alterations = $j.extend({}, this.effects[0]);
+				const alterations = Object.assign({}, this.effects[0]);
 				// Double effect if upgraded
 				if (this.isUpgraded()) {
 					for (const k in alterations) {
@@ -104,7 +102,7 @@ export default (G: Game) => {
 					}
 				}
 				log += '+' + amount;
-				G.log(log);
+				G.gameManager.log(log);
 			},
 		},
 
@@ -154,9 +152,8 @@ export default (G: Game) => {
 			},
 
 			activate: function (path, args) {
-				const ability = this;
-				ability.end();
-				G.Phaser.camera.shake(0.01, 100, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				const ability = this;				ability.end();
+				G.cameraShake(0.01, 100, true, 'HORIZONTAL', true);
 
 				const target = arrayUtils.last(path).creature;
 				const damage = new Damage(
@@ -208,7 +205,7 @@ export default (G: Game) => {
 					if (hex !== null) {
 						target.moveTo(hex, {
 							callback: function () {
-								G.activeCreature.queryMove();
+								G.playerManager.activeCreature.queryMove();
 							},
 							ignoreMovementPoint: true,
 							ignorePath: true,
@@ -325,9 +322,8 @@ export default (G: Game) => {
 
 			//	activate() :
 			activate: function (path) {
-				const ability = this;
-				ability.end();
-				G.Phaser.camera.shake(0.01, 60, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				const ability = this;				ability.end();
+				G.cameraShake(0.01, 60, true, 'HORIZONTAL', true);
 
 				const target = arrayUtils.last(path).creature;
 
@@ -346,7 +342,7 @@ export default (G: Game) => {
 						G,
 					);
 					target.addEffect(effect);
-					G.log('%CreatureName' + target.id + "%'s meditation is lowered by 1");
+					G.gameManager.log('%CreatureName' + target.id + "%'s meditation is lowered by 1");
 				}
 
 				const damage = new Damage(
@@ -405,7 +401,7 @@ export default (G: Game) => {
 
 				G.grid.queryHexes({
 					fnOnCancel: function () {
-						G.activeCreature.queryMove();
+						G.playerManager.activeCreature.queryMove();
 					},
 					fnOnConfirm: function () {
 						// eslint-disable-next-line

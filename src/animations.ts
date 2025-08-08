@@ -1,8 +1,8 @@
 import * as arrayUtils from './utility/arrayUtils';
 import Game from './game';
-import { Creature } from './creature';
+import { Creature } from './models/Creature';
 import { Hex } from './utility/hex';
-import { Ability } from './ability';
+import { Ability } from './models/Ability';
 import { QuadraticCurve } from './utility/curve';
 import { DEBUG_ENABLE_FAST_WALKING, DEBUG_WALK_SPEED_MS } from './debug';
 
@@ -203,7 +203,7 @@ export class Animations {
 		creature.pos = hex.pos;
 		creature.updateHex();
 
-		game.onStepIn(creature, hex, opts);
+		game.trapManager.onStepIn(creature, hex, opts);
 
 		creature.pickupDrop();
 
@@ -294,24 +294,22 @@ export class Animations {
 			targetPoint = {
 				x: targetX + 45,
 				y: path[baseDist].displayPos.y - 20,
-			},
-			// Sprite id here
-			sprite = game.grid.creatureGroup.create(emissionPoint.x, emissionPoint.y, spriteId),
+			},			// Sprite id here
+			sprite = game.grid.scene.add.sprite(emissionPoint.x, emissionPoint.y, spriteId),
 			duration = dist * 75;
-
-		sprite.anchor.setTo(0.5);
+		
+		game.grid.creatureGroup.add(sprite);
+		sprite.setOrigin(0.5);
 		sprite.rotation = -Math.PI / 3 + (args.direction * Math.PI) / 3;
-		const tween = game.Phaser.add
-			.tween(sprite)
-			.to(
-				{
-					x: targetPoint.x,
-					y: targetPoint.y,
-				},
-				duration,
-				Phaser.Easing.Linear.None,
-			)
-			.start();
+		const tween = game.createTween(sprite, 
+			{
+				x: targetPoint.x,
+				y: targetPoint.y,
+			},
+			duration,
+			null, // Linear easing
+			true
+		);
 
 		return [tween, sprite, dist];
 	}

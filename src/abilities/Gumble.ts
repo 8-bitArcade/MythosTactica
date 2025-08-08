@@ -1,20 +1,19 @@
-import * as $j from 'jquery';
 import { Damage } from '../damage';
 import { Team, isTeam } from '../utility/team';
 import * as matrices from '../utility/matrices';
 import * as arrayUtils from '../utility/arrayUtils';
-import { Effect } from '../effect';
-import { Creature } from '../creature';
+import { Effect } from '../models/Effect';
+import { Creature } from '../models/Creature';
 import Game from '../game';
 import { Hex } from '../utility/hex';
-import { Trap } from '../utility/trap';
+import { Trap } from '../models/Trap';
 
 /** Creates the abilities
  * @param {Object} G the game object
  * @return {void}
  */
 export default (G: Game) => {
-	G.abilities[14] = [
+	G.playerManager.abilities[14] = [
 		// First Ability: Gooey Body
 		{
 			// Update stat buffs whenever health changes
@@ -54,7 +53,7 @@ export default (G: Game) => {
 							stackable: false,
 							effectFn: () => {
 								if (bonus !== this._lastBonus) {
-									G.log('Effect ' + this.title + ' triggered');
+									G.gameManager.log('Effect ' + this.title + ' triggered');
 								}
 							},
 						},
@@ -62,7 +61,7 @@ export default (G: Game) => {
 					),
 				);
 				if (!noLog) {
-					G.log(
+					G.gameManager.log(
 						'%CreatureName' + this.creature.id + '% receives ' + bonus + ' pierce, slash and crush',
 					);
 				}
@@ -111,7 +110,7 @@ export default (G: Game) => {
 				});
 				G.grid.queryChoice({
 					fnOnCancel: function () {
-						G.activeCreature.queryMove();
+						G.playerManager.activeCreature.queryMove();
 					},
 					fnOnConfirm: function () {
 						// eslint-disable-next-line
@@ -125,14 +124,11 @@ export default (G: Game) => {
 			},
 
 			activate: function (hexes: Hex[]) {
-				const ability = this;
-				ability.end();
+				const ability = this;				ability.end();
 
-				G.Phaser.camera.shake(0.02, 333, true, G.Phaser.camera.SHAKE_VERTICAL, true);
-
-				const targets = ability.getTargets(hexes);
+				G.cameraShake(0.02, 333, true, 'VERTICAL', true);				const targets = ability.getTargets(hexes);
 				// Deal double damage to enemies if upgraded
-				const enemyDamages = $j.extend({}, ability.damages);
+				const enemyDamages = Object.assign({}, ability.damages);
 				if (this.isUpgraded()) {
 					for (const k in enemyDamages) {
 						if ({}.hasOwnProperty.call(enemyDamages, k)) {
@@ -199,10 +195,9 @@ export default (G: Game) => {
 			},
 
 			// activate() :
-			activate: function (hex: Hex) {
-				this.end();
+			activate: function (hex: Hex) {				this.end();
 				const ability = this;
-				G.Phaser.camera.shake(0.01, 100, true, G.Phaser.camera.SHAKE_VERTICAL, true);
+				G.cameraShake(0.01, 100, true, 'VERTICAL', true);
 
 				const makeSeal = function () {
 					const effect = new Effect(
@@ -255,7 +250,7 @@ export default (G: Game) => {
 				if (hex.x !== this.creature.x || hex.y !== this.creature.y) {
 					this.creature.moveTo(hex, {
 						callback: function () {
-							G.activeCreature.queryMove();
+							G.playerManager.activeCreature.queryMove();
 							makeSeal();
 						},
 						ignoreMovementPoint: true,
@@ -315,10 +310,9 @@ export default (G: Game) => {
 			},
 
 			// activate() :
-			activate: function (path, args) {
-				const ability = this;
+			activate: function (path, args) {				const ability = this;
 				ability.end();
-				G.Phaser.camera.shake(0.02, 300, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.02, 300, true, 'HORIZONTAL', true);
 
 				let target = arrayUtils.last(path).creature;
 				{
@@ -409,7 +403,7 @@ export default (G: Game) => {
 						ignoreMovementPoint: true,
 						ignorePath: true,
 						callback: function () {
-							G.activeCreature.queryMove();
+							G.playerManager.activeCreature.queryMove();
 						},
 						animation: 'push',
 					});

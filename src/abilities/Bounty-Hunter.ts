@@ -2,11 +2,11 @@ import { Damage } from '../damage';
 import { Team } from '../utility/team';
 import * as matrices from '../utility/matrices';
 import * as arrayUtils from '../utility/arrayUtils';
-import { Effect } from '../effect';
+import { Effect } from '../models/Effect';
 import Game from '../game';
-import { Creature } from '../creature';
+import { Creature } from '../models/Creature';
 import { Hex } from '../utility/hex';
-import { Trap } from '../utility/trap';
+import { Trap } from '../models/Trap';
 
 /*
  *TODO
@@ -27,7 +27,7 @@ export default (G: Game) => {
 	 *	Bounty Hunter abilities
 	 * NOTICE: Abilities 3 and 4 are placeholders from Swine-Thug, they are there so the game doesn't break during testing
 	 */
-	G.abilities[1] = [
+	G.playerManager.abilities[1] = [
 		/** First Ability:
 		 * Passive:
 		 * Personal Space:
@@ -153,21 +153,19 @@ export default (G: Game) => {
 					1, // Area
 					[], // Effects
 					G,
-				);
-				ability.end();
-				G.Phaser.camera.shake(0.01, 150, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				);				ability.end();
+				G.cameraShake(0.01, 150, true, 'HORIZONTAL', true);
 				/** damage dealt is original health - current health
 				 * if current health is lower than damage dealt,
 				 * and the ability is upgraded,
 				 * make a second attack
-				 */
-				if (targetOriginalHealth - target.health >= target.health && this.isUpgraded()) {
-					// Added a delay for the second attack with a custom game log
+				 */				if (targetOriginalHealth - target.health >= target.health && this.isUpgraded()) {
+					// Added a delay for the second attack with a custom game log					
 					setTimeout(() => {
-						G.Phaser.camera.shake(0.01, 150, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+						G.cameraShake(0.01, 150, true, 'HORIZONTAL', true);
 						ability.end(true);
 						target.takeDamage(damage);
-						G.log('%CreatureName' + ability.creature.id + '% used ' + ability.title + ' twice');
+						G.gameManager.log('%CreatureName' + ability.creature.id + '% used ' + ability.title + ' twice');
 					}, 1000);
 				} else target.takeDamage(damage);
 			},
@@ -277,10 +275,9 @@ export default (G: Game) => {
 			},
 
 			//	activate() :
-			activate: function (path) {
-				const ability = this;
+			activate: function (path) {				const ability = this;
 				ability.end();
-				G.Phaser.camera.shake(0.01, 60, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+				G.cameraShake(0.01, 60, true, 'HORIZONTAL', true);
 
 				const target = arrayUtils.last(path).creature;
 
@@ -299,7 +296,7 @@ export default (G: Game) => {
 						G,
 					);
 					target.addEffect(effect);
-					G.log('%CreatureName' + target.id + "%'s meditation is lowered by 1");
+					G.gameManager.log('%CreatureName' + target.id + "%'s meditation is lowered by 1");
 				}
 
 				const damage = new Damage(
@@ -358,7 +355,7 @@ export default (G: Game) => {
 
 				G.grid.queryHexes({
 					fnOnCancel: function () {
-						G.activeCreature.queryMove();
+						G.playerManager.activeCreature.queryMove();
 					},
 					fnOnConfirm: function () {
 						// eslint-disable-next-line

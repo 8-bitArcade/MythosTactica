@@ -1,10 +1,9 @@
-import * as $j from 'jquery';
 import { Damage } from '../damage';
 import { Team, isTeam } from '../utility/team';
 import * as matrices from '../utility/matrices';
 import * as arrayUtils from '../utility/arrayUtils';
-import { Creature } from '../creature';
-import { Effect } from '../effect';
+import { Creature } from '../models/Creature';
+import { Effect } from '../models/Effect';
 import { Direction } from '../utility/hex';
 import Game from '../game';
 import { QueryOptions } from '../utility/hexgrid';
@@ -14,7 +13,7 @@ import { QueryOptions } from '../utility/hexgrid';
  * @return {void}
  */
 export default (G: Game) => {
-	G.abilities[40] = [
+	G.playerManager.abilities[40] = [
 		/**
 		 * First Ability: Tentacle Bush
 		 *
@@ -115,7 +114,7 @@ export default (G: Game) => {
 				attackerEffect.target;
 
 				// Making attacker unmovable will change its move query, so update it
-				if (damage.attacker === G.activeCreature) {
+				if (damage.attacker === G.playerManager.activeCreature) {
 					damage.attacker.queryMove();
 				}
 			},
@@ -168,8 +167,8 @@ export default (G: Game) => {
 					];
 					G.grid.queryChoice({
 						fnOnSelect: function (choice, args) {
-							G.activeCreature.faceHex(args.hex, undefined, true);
-							args.hex.overlayVisualState('creature selected player' + G.activeCreature.team);
+							G.playerManager.activeCreature.faceHex(args.hex, undefined, true);
+							args.hex.overlayVisualState('creature selected player' + G.playerManager.activeCreature.team);
 						},
 						fnOnConfirm: function () {
 							// eslint-disable-next-line
@@ -180,12 +179,10 @@ export default (G: Game) => {
 						choices: choices,
 					});
 				}
-			},
-
-			activate: function (targetOrChoice, args) {
+			},			activate: function (targetOrChoice, args) {
 				const ability = this;
 				ability.end();
-				G.Phaser.camera.shake(0.02, 100, true, G.Phaser.camera.SHAKE_VERTICAL, true);
+				G.cameraShake(0.02, 100, true, 'VERTICAL', true);
 
 				if (!this.isUpgraded()) {
 					this._activateOnTarget(targetOrChoice);
@@ -407,10 +404,9 @@ export default (G: Game) => {
 						overrideSpeed: 100,
 						ignoreMovementPoint: true,
 						turnAroundOnComplete: !isChargingBackwards,
-						callback: function () {
-							// Damage before any other creature movement is complete and before push.
+						callback: function () {							// Damage before any other creature movement is complete and before push.
 							ability._damage(target, runPath);
-							G.Phaser.camera.shake(0.01, 250, true, G.Phaser.camera.SHAKE_HORIZONTAL, true);
+							G.cameraShake(0.01, 250, true, 'HORIZONTAL', true);
 
 							const interval = setInterval(function () {
 								if (!G.freezedInput) {
@@ -419,7 +415,7 @@ export default (G: Game) => {
 									if (ability.isUpgraded()) {
 										ability._pushTarget(target, pushPath, args);
 									} else {
-										G.activeCreature.queryMove();
+										G.playerManager.activeCreature.queryMove();
 									}
 								}
 							}, 100);
@@ -514,7 +510,7 @@ export default (G: Game) => {
 				const interval = setInterval(function () {
 					if (!G.freezedInput) {
 						clearInterval(interval);
-						G.activeCreature.queryMove();
+						G.playerManager.activeCreature.queryMove();
 					}
 				}, 100);
 
@@ -540,10 +536,9 @@ export default (G: Game) => {
 
 				/* It's possible the target can no longer be pushed, for example Snow Bunny
 				hopped out of the way. If that's the case, only "push" with the Nutcase. */
-				if (targetDestination) {
-					target.moveTo(
+				if (targetDestination) {					target.moveTo(
 						targetDestination,
-						$j.extend(
+						Object.assign(
 							{
 								animation: 'push',
 							},
@@ -605,9 +600,8 @@ export default (G: Game) => {
 			//	activate() :
 			activate: function (target) {
 				const ability = this;
-				const crea = ability.creature;
-				ability.end();
-				G.Phaser.camera.shake(0.02, 200, true, G.Phaser.camera.SHAKE_BOTH, true);
+				const crea = ability.creature;				ability.end();
+				G.cameraShake(0.02, 200, true, 'BOTH', true);
 
 				const damage = new Damage(
 					crea, // Attacker

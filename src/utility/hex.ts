@@ -1,15 +1,19 @@
-import * as $j from 'jquery';
-import { Trap } from './trap';
-import { Drop } from '../drop';
-import { Creature } from '../creature';
+/**
+ * Hex utilities, enums, and classes for representing and manipulating hex tiles and directions.
+ * @module hex
+ */
+
+import { Trap } from '../models/Trap';
+import { Drop } from '../models/Drop';
+import { Creature } from '../models/Creature';
 import { HexGrid } from './hexgrid';
 import Game from '../game';
-import Phaser, { Point, Polygon } from 'phaser-ce';
+import Phaser from 'phaser';
 import { DEBUG } from '../debug';
 import { getPointFacade } from './pointfacade';
 import * as Const from './const';
-import { Effect } from '../effect';
-import { Player } from '../player';
+import { Effect } from '../models/Effect';
+import { Player } from '../models/Player';
 
 export enum Direction {
 	None = -1,
@@ -96,13 +100,12 @@ export class Hex {
 	 * Store ID of animation frame request.
 	 */
 	spinRequest: number;
-
 	originalDisplayPos: { x: number; y: number };
-	tween: Phaser.Tween;
-	hitBox: Phaser.Sprite;
-	display: Phaser.Sprite;
-	overlay: Phaser.Sprite;
-	coordText: Phaser.Text;
+	tween: Phaser.Tweens.Tween;
+	hitBox: Phaser.GameObjects.Sprite;
+	display: Phaser.GameObjects.Sprite;
+	overlay: Phaser.GameObjects.Sprite;
+	coordText: Phaser.GameObjects.Text;
 
 	/**
 	 *
@@ -134,18 +137,16 @@ export class Hex {
 		this.direction = Direction.None; // Used for queryDirection
 		this.displayClasses = '';
 		this.overlayClasses = '';
-
 		this.width = Const.HEX_WIDTH_PX;
-		this.height = Const.HEX_HEIGHT_PX;
-		this.displayPos = Const.offsetCoordsToPx({ x, y });
+	this.height = Const.HEX_HEIGHT_PX;
+	this.displayPos = Const.offsetCoordsToPx({ x, y });
 
-		this.originalDisplayPos = $j.extend({}, this.displayPos);
+	this.originalDisplayPos = { ...this.displayPos };
 
 		this.isSpinning = false;
 		this.spinRequest = null;
 
 		this.tween = null;
-
 		if (grid) {
 			// NOTE: Set up hex hitBox and display/overlay elements.
 
@@ -153,11 +154,9 @@ export class Hex {
 			const x = this.displayPos.x - 10;
 			const y = this.displayPos.y;
 
-			this.hitBox = grid.hexesGroup.create(x, y, 'hex');
-			this.hitBox.alpha = 0;
-			this.hitBox.inputEnabled = true;
-			this.hitBox.ignoreChildInput = true;
-			this.hitBox.input.useHandCursor = false;
+			this.hitBox = grid.scene.add.sprite(x, y, 'hex');
+			this.hitBox.setAlpha(0);
+			grid.hexesGroup.add(this.hitBox);
 
 			{
 				// NOTE: Set up hexagonal hitArea for hitBox
@@ -166,53 +165,53 @@ export class Hex {
 				const angles = [0, 1, 2, 3, 4, 5, 6].map((i) => angleStart - i * angleStep);
 				// NOTE: The coefficients below are "magic"; tested in-game.
 				const [radius_w, radius_h] = [0.58 * this.width, 0.69 * this.height];
-				const [offset_x, offset_y] = [radius_w + 2, radius_h + 9];
-				const points = angles.map(
+				const [offset_x, offset_y] = [radius_w + 2, radius_h + 9];				const points = angles.map(
 					(angle) =>
-						new Point(Math.cos(angle) * radius_w + offset_x, Math.sin(angle) * radius_h + offset_y),
+						new Phaser.Geom.Point(Math.cos(angle) * radius_w + offset_x, Math.sin(angle) * radius_h + offset_y),
 				);
-				this.hitBox.hitArea = new Polygon(points);
+				const polygon = new Phaser.Geom.Polygon(points);
+				this.hitBox.setInteractive(polygon, Phaser.Geom.Polygon.Contains);
 			}
 
-			this.display = grid.displayHexesGroup.create(x, y, 'hex');
-			this.display.alpha = 0;
+			this.display = grid.scene.add.sprite(x, y, 'hex');
+			this.display.setAlpha(0);
+			grid.displayHexesGroup.add(this.display);
 
-			this.overlay = grid.overlayHexesGroup.create(x, y, 'hex');
-			this.overlay.alpha = 0;
-
-			// Binding Events
-			this.hitBox.events.onInputOver.add(() => {
+			this.overlay = grid.scene.add.sprite(x, y, 'hex');
+			this.overlay.setAlpha(0);
+			grid.overlayHexesGroup.add(this.overlay);			// Binding Events
+			this.hitBox.on('pointerover', () => {
 				if (game.freezedInput || game.UI.dashopen) return;
 
 				//  Show dashed overlay on current hexes of active creature
-				if (this.reachable && game.activeCreature) {
-					game.activeCreature.highlightCurrentHexesAsDashed();
+				if (this.reachable && game.playerManager.activeCreature) {
+					game.playerManager.activeCreature.highlightCurrentHexesAsDashed();
 				}
 
 				game.signals.hex.dispatch('over', { hex: this });
 				grid.selectedHex = this;
 				this.onSelectFn(this);
-			}, this);
+			});
 
-			this.hitBox.events.onInputOut.add((_, pointer) => {
-				if (game.freezedInput || game.UI.dashopen || !pointer.withinGame) return;
+			this.hitBox.on('pointerout', (pointer) => {
+				if (game.freezedInput || game.UI.dashopen || !pointer.downElement) return;
 
 				// Clear dashed overlay when leaving a reachable hex
-				if (this.reachable && game.activeCreature) {
-					game.activeCreature.clearDashedOverlayOnHexes();
+				if (this.reachable && game.playerManager.activeCreature) {
+					game.playerManager.activeCreature.clearDashedOverlayOnHexes();
 				}
 
 				game.signals.hex.dispatch('out', { hex: this });
 				grid.clearHexViewAlterations();
 				this.onHoverOffFn(this);
-			}, this);
+			});
 
-			this.hitBox.events.onInputUp.add((Sprite, Pointer) => {
+			this.hitBox.on('pointerup', (pointer) => {
 				if (game.freezedInput || game.UI.dashopen) {
 					return;
 				}
 
-				switch (Pointer.button) {
+				switch (pointer.button) {
 					case 0:
 						// Left mouse button pressed
 						this.onConfirmFn(this);
@@ -225,7 +224,7 @@ export class Hex {
 						this.onRightClickFn(this);
 						break;
 				}
-			}, this);
+			});
 		}
 
 		this.displayPos.y = this.displayPos.y * 0.75 + 30;
@@ -489,13 +488,12 @@ export class Hex {
 
 		this.updateStyle();
 	}
-
 	/**
 	 * Set Hex.reachable to True for this hex and change $display class
 	 */
 	setReachable() {
 		this.reachable = true;
-		this.hitBox.input.useHandCursor = true;
+		this.hitBox.input.cursor = 'pointer';
 		this.updateStyle();
 	}
 
@@ -504,7 +502,7 @@ export class Hex {
 	 */
 	unsetReachable() {
 		this.reachable = false;
-		this.hitBox.input.useHandCursor = false;
+		this.hitBox.input.cursor = 'default';
 		this.updateStyle();
 	}
 
@@ -559,64 +557,62 @@ export class Hex {
 		targetAlpha = Boolean(this.displayClasses.match(/showGrid/g)) || targetAlpha;
 		targetAlpha = Boolean(this.displayClasses.match(/dashed/g)) || targetAlpha;
 		targetAlpha = Boolean(this.displayClasses.match(/deadzone/g)) || targetAlpha;
-
 		if (this.displayClasses.match(/0|1|2|3/)) {
 			const player = this.displayClasses.match(/0|1|2|3/);
-			this.display.loadTexture(`hex_p${player}`);
+			this.display.setTexture(`hex_p${player}`);
 			this.grid.displayHexesGroup.bringToTop(this.display);
 		} else if (this.displayClasses.match(/adj/)) {
-			this.display.loadTexture('hex_path');		} else if (this.displayClasses.match(/dashed/)) {			// Check if this is a dashed hex with a creature (blocked target)
+			this.display.setTexture('hex_path');		} else if (this.displayClasses.match(/dashed/)) {			// Check if this is a dashed hex with a creature (blocked target)
 			if (this.creature instanceof Creature) {
 				// Use colored dashed texture for the creature's team
-				this.display.loadTexture(`hex_dashed_p${this.creature.team}`);
+				this.display.setTexture(`hex_dashed_p${this.creature.team}`);
 				// Ensure dashed hexagons are visible
 				this.display.alpha = 1;
 				// Bring dashed hexes with creatures to the top of the display group for better visibility
 				this.grid.displayHexesGroup.bringToTop(this.display);
 			} else {
-				this.display.loadTexture('hex_dashed');
+				this.display.setTexture('hex_dashed');
 			}
 		} else if (this.displayClasses.match(/deadzone/)) {
-			this.display.loadTexture('hex_deadzone');
+			this.display.setTexture('hex_deadzone');
 		} else {
-			this.display.loadTexture('hex');
+			this.display.setTexture('hex');
 		}
 
 		this.display.alpha = targetAlpha ? 1 : 0;
-
 		if (this.displayClasses.match(/shrunken/)) {
-			this.display.scale.setTo(shrinkScale);
-			this.overlay.scale.setTo(shrinkScale);
-			this.display.alignIn(this.hitBox, Phaser.CENTER);
-			this.overlay.alignIn(this.hitBox, Phaser.CENTER);
+			this.display.setScale(shrinkScale);
+			this.overlay.setScale(shrinkScale);
+			// Center the sprites within the hitBox
+			this.display.setPosition(this.hitBox.x, this.hitBox.y);
+			this.overlay.setPosition(this.hitBox.x, this.hitBox.y);
 		} else {
-			this.display.scale.setTo(1);
-			this.overlay.scale.setTo(1);
-			this.display.alignIn(this.hitBox, Phaser.CENTER);
-			this.overlay.alignIn(this.hitBox, Phaser.CENTER);
+			this.display.setScale(1);
+			this.overlay.setScale(1);
+			// Center the sprites within the hitBox
+			this.display.setPosition(this.hitBox.x, this.hitBox.y);
+			this.overlay.setPosition(this.hitBox.x, this.hitBox.y);
 		}
-
 		// Display Coord
 		if (this.displayClasses.match(/showGrid/g)) {
-			if (!(this.coordText && this.coordText.exists)) {
-				this.coordText = this.game.Phaser.add.text(
+			if (!(this.coordText && this.coordText.active)) {				this.coordText = this.grid.scene.add.text(
 					this.originalDisplayPos.x + 45,
 					this.originalDisplayPos.y + 63,
 					this.coord,
 					{
-						font: '30pt Play',
-						fill: '#000000',
+						fontFamily: 'Play',
+						fontSize: '30pt',
+						color: '#000000',
 						align: 'center',
 					},
 				);
 				if (this.creature || this.trap || this.drop) {
-					this.coordText.stroke = '#ffffff';
-					this.coordText.strokeThickness = 5;
+					this.coordText.setStroke('#ffffff', 5);
 				}
-				this.coordText.anchor.setTo(0.5);
+				this.coordText.setOrigin(0.5);
 				this.grid.overlayHexesGroup.add(this.coordText);
 			}
-		} else if (this.coordText && this.coordText.exists) {
+		} else if (this.coordText && this.coordText.active) {
 			this.coordText.destroy();
 		}
 
@@ -624,30 +620,28 @@ export class Hex {
 		targetAlpha = Boolean(this.overlayClasses.match(/hover|creature/g));
 
 		if (this.overlayClasses.match(/0|1|2|3/)) {
-			const player = this.overlayClasses.match(/0|1|2|3/);
-
-			if (this.overlayClasses.match(/reachable/)) {
+			const player = this.overlayClasses.match(/0|1|2|3/);			if (this.overlayClasses.match(/reachable/)) {
 				targetAlpha = true;
-				this.overlay.loadTexture('hex_path');
+				this.overlay.setTexture('hex_path');
 			} else if (
 				this.overlayClasses.match(/hover/) &&
 				this.displayClasses.indexOf(`creature player${player}`) === -1
 			) {
-				this.display.loadTexture('hex_path');
+				this.display.setTexture('hex_path');
 				this.display.alpha = 1;
-				this.overlay.loadTexture(`hex_hover_p${player}`);
+				this.overlay.setTexture(`hex_hover_p${player}`);
 			} else if (this.overlayClasses.match(/hover/)) {
-				this.display.loadTexture('hex_path');
+				this.display.setTexture('hex_path');
 			} else if (this.overlayClasses.match(/dashed/)) {
-				this.overlay.loadTexture(`hex_dashed_p${player}`);
+				this.overlay.setTexture(`hex_dashed_p${player}`);
 			} else {
-				this.overlay.loadTexture(`hex_p${player}`);
+				this.overlay.setTexture(`hex_p${player}`);
 			}
 
 			this.grid.overlayHexesGroup.bringToTop(this.overlay);
 		} else {
-			this.overlay.loadTexture('cancel');
-			this.overlay.anchor.set(0.5, 0.5);
+			this.overlay.setTexture('cancel');
+			this.overlay.setOrigin(0.5, 0.5);
 			if (!this.isSpinning) {
 				this.startSpinning();
 			}

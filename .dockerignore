@@ -2,7 +2,7 @@
 .gitignore
 .vscode
 node_modules
-npm-debug.log
+npm-debuG.gameManager.log
 Dockerfile*
 docker-compose*
 *.md

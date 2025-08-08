@@ -1,7 +1,5 @@
-// Import jQuery related stuff
-import * as $j from 'jquery';
-import 'jquery.transit';
-import { unitData } from './data/units';
+// Modern imports without jQuery dependencies
+import { unitData } from './data/UnitData';
 import Game from './game';
 import { PreMatchAudioPlayer } from './sound/pre-match-audio';
 import { Fullscreen } from './ui/fullscreen';
@@ -22,6 +20,155 @@ import './style/main.less';
 
 export type GameConfig = ReturnType<typeof getGameConfig>;
 
+// Utility functions for DOM manipulation (replaces jQuery)
+const $ = {
+	// Element selection
+	get: (selector: string): HTMLElement | null => document.querySelector(selector),
+	getAll: (selector: string): NodeListOf<Element> => document.querySelectorAll(selector),
+	getId: (id: string): HTMLElement | null => document.getElementById(id),
+
+	// DOM manipulation
+	hide: (element: HTMLElement | null): void => {
+		if (element) element.style.display = 'none';
+	},
+	show: (element: HTMLElement | null): void => {
+		if (element) element.style.display = '';
+	},
+	remove: (element: HTMLElement | null): void => {
+		if (element) element.remove();
+	},
+	addClass: (element: HTMLElement | null, className: string): void => {
+		if (element) element.classList.add(className);
+	},	removeClass: (element: HTMLElement | null, className: string): void => {
+		if (element) element.classList.remove(className);
+	},
+	hasClass: (element: HTMLElement | null, className: string): boolean => {
+		return element ? element.classList.contains(className) : false;
+	},
+	toggleClass: (element: HTMLElement | null, className: string): void => {
+		if (element) element.classList.toggle(className);
+	},
+	setText: (element: HTMLElement | null, text: string): void => {
+		if (element) element.textContent = text;
+	},
+	setHtml: (element: HTMLElement | null, html: string): void => {
+		if (element) element.innerHTML = html;
+	},
+	html: (element: HTMLElement | null, content?: string): string | void => {
+		if (!element) return '';
+		if (content !== undefined) {
+			element.innerHTML = content;
+		} else {
+			return element.innerHTML;
+		}
+	},
+	text: (element: HTMLElement | null, content?: string): string | void => {
+		if (!element) return '';
+		if (content !== undefined) {
+			element.textContent = content;
+		} else {
+			return element.textContent || '';
+		}
+	},
+	getValue: (element: HTMLInputElement | null): string => {
+		return element ? element.value : '';
+	},
+	setValue: (element: HTMLInputElement | null, value: string): void => {
+		if (element) element.value = value;
+	},
+	setChecked: (element: HTMLInputElement | null, checked: boolean): void => {
+		if (element) element.checked = checked;
+	},
+	isVisible: (element: HTMLElement | null): boolean => {
+		if (!element) return false;
+		const style = window.getComputedStyle(element);
+		return style.display !== 'none' && style.visibility !== 'hidden';
+	},
+	// CSS visibility/display checks (jQuery replacement)
+	isDisplayed: (element: HTMLElement | null): boolean => {
+		if (!element) return false;
+		const style = window.getComputedStyle(element);
+		return style.display !== 'none';
+	},
+	isVisibilityHidden: (element: HTMLElement | null): boolean => {
+		if (!element) return true;
+		const style = window.getComputedStyle(element);
+		return style.visibility === 'hidden';
+	},
+	getCheckedValue: (selector: string): string => {
+		const element = document.querySelector(selector + ':checked') as HTMLInputElement;
+		return element ? element.value : '';
+	},
+	trigger: (element: HTMLElement | null, eventType: string): void => {
+		if (element) {
+			const event = new Event(eventType, { bubbles: true, cancelable: true });
+			element.dispatchEvent(event);
+		}
+	},
+	click: (element: HTMLElement | null): void => {
+		if (element) element.click();	},
+	focus: (element: HTMLElement | null): void => {
+		if (element) element.focus();
+	},
+	setProp: (element: HTMLElement | null, prop: string, value: any): void => {
+		if (element) (element as any)[prop] = value;
+	},
+	css: (element: HTMLElement | null, styles: { [key: string]: string }): void => {
+		if (element) {
+			Object.keys(styles).forEach(property => {
+				const camelProperty = property.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+				(element.style as any)[camelProperty] = styles[property];
+			});
+		}
+	},
+	// Event handling
+	on: (selector: string | HTMLElement | Document | null, event: string, handler: EventListener): void => {
+		let element: HTMLElement | Document | null;
+		if (typeof selector === 'string') {
+			element = document.querySelector(selector) as HTMLElement;
+		} else {
+			element = selector;
+		}
+		if (element) element.addEventListener(event, handler);
+	},
+	off: (selector: string | HTMLElement | null, event: string, handler?: EventListener): void => {
+		let element: HTMLElement | null;
+		if (typeof selector === 'string') {
+			element = document.querySelector(selector) as HTMLElement;
+		} else {
+			element = selector;
+		}
+		if (element && handler) {
+			element.removeEventListener(event, handler);
+		} else if (element && !handler) {
+			// If no handler specified, clone the element to remove all listeners
+			const newElement = element.cloneNode(true);
+			element.parentNode?.replaceChild(newElement, element);
+		}
+	},
+
+	// Form helpers
+	getFormData: (form: HTMLFormElement): { [key: string]: string } => {
+		const formData = new FormData(form);
+		const result: { [key: string]: string } = {};
+		formData.forEach((value, key) => {
+			result[key] = value as string;
+		});
+		return result;
+	},
+	// DOM ready
+	ready: (callback: () => void): void => {
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', callback);
+		} else {
+			callback();
+		}
+	}
+};
+
+// Export the utility functions for use in other modules
+export { $ };
+
 // Generic object we can decorate with helper methods to simply dev and user experience.
 // TODO: Expose this in a less hacky way.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Too many unknown types.
@@ -35,63 +182,80 @@ AB.getLog = () => AB.currentGame.gamelog.stringify();
 AB.saveLog = () => AB.currentGame.gamelog.save();
 AB.restoreGame = (str) => AB.currentGame.gamelog.load(str);
 window.AB = AB;
+// Also expose G globally for compatibility with external tools
+(window as any).G = G;
 const connect = new Connect(G);
 G.connect = connect;
 
 // Load the abilities
-unitData.forEach(async (creature) => {
+const abilityLoadPromises = unitData.map(async (creature) => {
 	if (!creature.playable) {
-		return;
+		return Promise.resolve();
 	}
 
-	import(`./abilities/${creature.name.split(' ').join('-')}`).then((generator) =>
+	return import(`./abilities/${creature.name.split(' ').join('-')}`).then((generator) =>
 		generator.default(G),
 	);
 });
 
-$j(() => {
-	const scrim = $j('.scrim');
-	scrim.on('transitionend', function () {
-		scrim.remove();
-	});
-	scrim.removeClass('loading');
+// Wait for all abilities to load, then reinitialize creature abilities
+Promise.all(abilityLoadPromises).then(() => {
+	console.log('[DEBUG] All abilities loaded, reinitializing creature abilities...');
+	G.reinitializeCreatureAbilities();
+});
+
+$.ready(() => {
+	const scrim = $.get('.scrim');
+	if (scrim) {
+		scrim.addEventListener('transitionend', function () {
+			$.remove(scrim);
+		});
+		$.removeClass(scrim, 'loading');
+	}
 	renderPlayerModeType(G.multiplayer);
 
 	// Select a random combat location
-	const locationSelector = $j("input[name='combatLocation']");
-	const randomLocationIndex = Math.floor(Math.random() * locationSelector.length);
-	locationSelector.eq(randomLocationIndex).prop('checked', true).trigger('click');
-
+	const locationSelectors = $.getAll("input[name='combatLocation']") as NodeListOf<HTMLInputElement>;
+	const randomLocationIndex = Math.floor(Math.random() * locationSelectors.length);
+	const randomLocation = locationSelectors[randomLocationIndex];
+	if (randomLocation) {
+		$.setChecked(randomLocation, true);
+		$.trigger(randomLocation, 'click');
+	}
 	// Disable initial game setup until browser tab has focus
-	window.addEventListener('blur', G.onBlur.bind(G), false);
-	window.addEventListener('focus', G.onFocus.bind(G), false);
+	window.addEventListener('blur', G.gameManager.onBlur.bind(G), false);
+	window.addEventListener('focus', G.gameManager.onFocus.bind(G), false);
 
 	// Function to disable scroll and arrow keys
 	function disableScrollAndArrowKeys(element: HTMLElement) {
-		const $element = $j(element);
-		$element.attr('tabindex', '0'); // Set tabindex to make element focusable
+		if (!element) return;
+		
+		element.setAttribute('tabindex', '0'); // Set tabindex to make element focusable
 
-		$element.on('mouseover', () => {
+		element.addEventListener('mouseover', () => {
 			// Add event listener for mouse over game area
-			$element.focus(); // Focus the element
-			$element.on('wheel', (e) => {
+			element.focus(); // Focus the element
+			element.addEventListener('wheel', (e) => {
 				e.preventDefault();
 			});
-			$element.on('keydown', (e) => {
+			element.addEventListener('keydown', (e) => {
 				e.preventDefault();
 			});
 
-			$element.on('mouseout', () => {
-				$element.blur(); // Remove focus from the element when mouse leaves game area
+			element.addEventListener('mouseout', () => {
+				element.blur(); // Remove focus from the element when mouse leaves game area
 			});
 		});
 	}
 
-	disableScrollAndArrowKeys(document.getElementById('loader')); // Disable scroll and arrow keys for loader element
+	disableScrollAndArrowKeys($.getId('loader')); // Disable scroll and arrow keys for loader element
 
 	// Add listener for Fullscreen API
-	const fullscreen = new Fullscreen(document.getElementById('fullscreen'));
-	$j('#fullscreen').on('click', () => fullscreen.toggle());
+	const fullscreen = new Fullscreen($.getId('fullscreen'));
+	const fullscreenButton = $.getId('fullscreen');
+	if (fullscreenButton) {
+		fullscreenButton.addEventListener('click', () => fullscreen.toggle());
+	}
 
 	const startScreenHotkeys = {
 		Space: {
@@ -141,10 +305,9 @@ $j(() => {
 			},
 		},
 	};
-
 	// Binding Hotkeys
 	if (!DEBUG_DISABLE_HOTKEYS) {
-		$j(document).on('keydown', (event) => {
+		document.addEventListener('keydown', (event) => {
 			const hotkey = startScreenHotkeys[event.code];
 
 			if (hotkey === undefined) {
@@ -165,40 +328,45 @@ $j(() => {
 		forceTwoPlayerMode();
 	}
 
-	// Allow button game options to slide in prematch screen
-	buttonSlide();
+	// Allow button game options to slide in prematch screen	buttonSlide();
 
 	// Create new Object to play audio in pre-match screen
 	const beastAudio = new PreMatchAudioPlayer();
-
-	$j('#gameTitle').on('click', () => {
+	$.on($.getId('gameTitle'), 'click', () => {
 		beastAudio.playBeast();
 	});
 
-	// Hide singleplayer option initially
-	$j('#singleplayer').hide();
+	// Get frequently used elements to avoid repeated DOM queries
+	const singleplayerBtn = $.getId('singleplayer');
+	const multiplayerBtn = $.getId('multiplayer');
+	const gameSetupElement = $.getId('gameSetup');
+	const startButtonElement = $.getId('startButton');
+	const startMatchButton = $.getId('startMatchButton');
+	const createMatchButton = $.getId('createMatchButton');
+	const matchFrame = $.get('.match-frame');
+	const setupFrame = $.get('.setupFrame');
+	const loginregFrame = $.get('.loginregFrame');
 
-	$j('#createMatchButton').on('click', () => {
-		$j('.match-frame').hide();
-		$j('#gameSetup').show();
+	// Hide singleplayer option initially
+	$.hide(singleplayerBtn);
+
+	$.on(createMatchButton, 'click', () => {
+		$.hide(matchFrame);
+		$.show(gameSetupElement);
 		renderPlayerModeType(G.multiplayer);
-		$j('#startMatchButton').show();
-		$j('#startButton').hide();
+		$.show(startMatchButton);
+		$.hide(startButtonElement);
 
 		// TODO Remove after implementation 2 vs 2 in multiplayer mode
 		forceTwoPlayerMode();
 	});
 
-	$j('#singleplayer').hide();
-
-	$j('#multiplayer').on('click', async () => {
-		$j('#multiplayer').hide();
-		$j('#singleplayer').show();
-		$j('.setupFrame,.lobby').hide();
-		$j('.loginregFrame').show();
-		$j('#multiplayer').hide();
-		$j('#singleplayer').show();
-		const sess = new SessionI();
+	$.on(multiplayerBtn, 'click', async () => {
+		$.hide(multiplayerBtn);
+		$.show(singleplayerBtn);
+		$.hide($.get('.setupFrame,.lobby'));
+		$.show(loginregFrame);
+		const sess = new SessionI(null);
 		try {
 			await sess.restoreSession();
 		} catch (e) {
@@ -207,18 +375,17 @@ $j(() => {
 		}
 	});
 
-	$j('#singleplayer').on('click', async () => {
-		$j('.setupFrame').show();
-		$j('.loginregFrame').hide();
-		$j('#multiplayer').show();
-		$j('#singleplayer').hide();
+	$.on(singleplayerBtn, 'click', async () => {
+		$.show(setupFrame);
+		$.hide(loginregFrame);
+		$.show(multiplayerBtn);
+		$.hide(singleplayerBtn);
 	});
-
 	// Focus the form to enable "press enter to start the game" functionality
-	$j('#startButton').trigger('focus');
+	$.focus(startButtonElement);
 
 	const startGame = () => {
-		G.loadGame(getGameConfig());
+		G.gameManager.loadGame(getGameConfig());
 	};
 
 	const restoreGameLog = (log) => {
@@ -231,52 +398,48 @@ $j(() => {
 		setTimeout(startGame, 50);
 	}
 
-	$j('form#gameSetup').on('submit', (e) => {
+	$.on($.get('form#gameSetup'), 'submit', (e) => {
 		// NOTE: Prevent submission
 		e.preventDefault();
 		startGame();
 		// NOTE: Prevent submission
 		return false;
 	});
-
 	// Register
 	async function register(e) {
 		e.preventDefault(); // Prevent submit
 		const reg = getReg();
 		// Check empty fields
-		if (
-			$j('#register .error-req').css('display') != 'none' ||
-			$j('#register .error-req').css('visibility') != 'hidden'
-		) {
+		const errorReq = $.get('#register .error-req');
+		if ($.isDisplayed(errorReq) || !$.isVisibilityHidden(errorReq)) {
 			// 'element' is hidden
-			$j('#register .error-req').hide();
-			$j('#register .error-req-message').hide();
+			$.hide(errorReq);
+			$.hide($.get('#register .error-req-message'));
 		}
 		if (reg.username == '' || reg.email == '' || reg.password == '' || reg.passwordmatch == '') {
-			$j('#register .error-req').show();
-			$j('#register .error-req-message').show();
+			$.show(errorReq);
+			$.show($.get('#register .error-req-message'));
 			return;
 		}
-		if (
-			$j('.error-pw-length').css('display') != 'none' ||
-			$j('.error-pw-length').css('visibility') != 'hidden'
-		) {
+		const errorPwLength = $.get('.error-pw-length');
+		if ($.isDisplayed(errorPwLength) || !$.isVisibilityHidden(errorPwLength)) {
 			// 'element' is hidden
-			$j('.error-pw-length').hide();
+			$.hide(errorPwLength);
 		}
 
 		// Password length
 		if (reg.password.split('').length < 8) {
-			$j('.error-pw-length').show();
+			$.show(errorPwLength);
 			return;
 		}
 		// Password match
-		if ($j('.error-pw').css('display') != 'none' || $j('.error-pw').css('visibility') != 'hidden') {
+		const errorPw = $.get('.error-pw');
+		if ($.isDisplayed(errorPw) || !$.isVisibilityHidden(errorPw)) {
 			// 'element' is hidden
-			$j('.error-pw').hide();
+			$.hide(errorPw);
 		}
 		if (reg.password != reg.passwordmatch) {
-			$j('.error-pw').show();
+			$.show(errorPw);
 			return;
 		}
 		const auth = new Authenticate(reg, connect.client);
@@ -286,39 +449,36 @@ $j(() => {
 		G.session = session;
 		G.client = connect.client;
 		G.multiplayer = true;
-		$j('.setupFrame,.welcome').show();
-		$j('.match-frame').show();
-		$j('.loginregFrame,#gameSetup').hide();
-		$j('.user').text(session.username);
+		$.show($.get('.setupFrame,.welcome'));
+		$.show($.get('.match-frame'));
+		$.hide($.get('.loginregFrame,#gameSetup'));
+		$.setText($.get('.user'), session.username);
 		console.log('new user created.' + session);
 		return false; // Prevent submit
 	}
-	$j('form#register').on('submit', register);
-
+	$.on('form#register', 'submit', register);
 	async function login(e) {
 		e.preventDefault(); // Prevent submit
 		const login = getLogin();
 		let session;
-		$j('#login .login-error-req-message').hide();
+		$.hide($.get('#login .login-error-req-message'));
 		if (login.email == '' || login.password == '') {
-			$j('#login .error-req').show();
-			$j('#login .error-req-message').show();
+			$.show($.get('#login .error-req'));
+			$.show($.get('#login .error-req-message'));
 			return;
 		}
 		// Check empty fields
-		if (
-			$j('#login .error-req').css('display') != 'none' ||
-			$j('#login .error-req').css('visibility') != 'hidden'
-		) {
+		const loginErrorReq = $.get('#login .error-req');
+		if ($.isDisplayed(loginErrorReq) || !$.isVisibilityHidden(loginErrorReq)) {
 			// 'element' is hidden
-			$j('#login .error-req').hide();
-			$j('#login .error-req-message').hide();
+			$.hide(loginErrorReq);
+			$.hide($.get('#login .error-req-message'));
 		}
 		const auth = new Authenticate(login, connect.client);
 		try {
 			session = await auth.authenticateEmail();
 		} catch (error) {
-			$j('#login .login-error-req-message').show();
+			$.show($.get('#login .login-error-req-message'));
 			return;
 		}
 
@@ -328,34 +488,33 @@ $j(() => {
 		G.client = connect.client;
 		G.multiplayer = true;
 
-		$j('.setupFrame,.welcome').show();
-		$j('.match-frame').show();
-		$j('.loginregFrame,#gameSetup').hide();
-		$j('.user').text(session.username);
+		$.show($.get('.setupFrame,.welcome'));
+		$.show($.get('.match-frame'));
+		$.hide($.get('.loginregFrame,#gameSetup'));
+		$.setText($.get('.user'), session.username);
 		return false; // Prevent submit
 	}
 	// Login form
-	$j('form#login').on('submit', login);
-	$j('#startMatchButton').on('click', () => {
-		G.loadGame(getGameConfig(), true);
+	$.on('form#login', 'submit', login);	$.on('#startMatchButton', 'click', () => {
+		G.gameManager.loadGame(getGameConfig(), true);
 		return false;
 	});
 
-	$j('#joinMatchButton').on('click', () => {
+	$.on('#joinMatchButton', 'click', () => {
 		//TODO move to match data received
-		$j('.lobby').show();
-		$j('.setupFrame').hide();
-		G.matchJoin();
+		$.show($.get('.lobby'));
+		$.hide($.get('.setupFrame'));
+		G.gameManager.matchJoin();
 		return false;
 	});
 
-	$j('#backFromMatchButton').on('click', () => {
-		$j('.lobby').hide();
-		$j('.setupFrame,.welcome').show();
+	$.on('#backFromMatchButton', 'click', () => {
+		$.hide($.get('.lobby'));
+		$.show($.get('.setupFrame,.welcome'));
 	});
 
-	$j('#refreshMatchButton').on('click', () => {
-		G.updateLobby();
+	$.on('#refreshMatchButton', 'click', () => {
+		G.gameManager.updateLobby();
 	});
 });
 
@@ -364,8 +523,8 @@ $j(() => {
  * should be removed after implementation 2 vs 2 in multiplayer mode
  */
 function forceTwoPlayerMode() {
-	$j('#p2').trigger('click');
-	$j('#p4').prop('disabled', true);
+	$.click($.getId('p2'));
+	$.setProp($.getId('p4'), 'disabled', true);
 }
 
 /**
@@ -374,10 +533,10 @@ function forceTwoPlayerMode() {
  */
 function getReg() {
 	const reg = {
-		username: $j('.register input[name="username"]').val() as string,
-		email: $j('.register input[name="email"]').val() as string,
-		password: $j('.register input[name="password"]').val() as string,
-		passwordmatch: $j('.register input[name="passwordmatch"]').val() as string,
+		username: $.getValue($.get('.register input[name="username"]') as HTMLInputElement),
+		email: $.getValue($.get('.register input[name="email"]') as HTMLInputElement),
+		password: $.getValue($.get('.register input[name="password"]') as HTMLInputElement),
+		passwordmatch: $.getValue($.get('.register input[name="passwordmatch"]') as HTMLInputElement),
 	};
 
 	return reg;
@@ -419,8 +578,8 @@ function readLogFromFile() {
  */
 function getLogin() {
 	const login = {
-		email: $j('.login input[name="email"]').val() as string,
-		password: $j('.login input[name="password"]').val() as string,
+		email: $.getValue($.get('.login input[name="email"]') as HTMLInputElement),
+		password: $.getValue($.get('.login input[name="password"]') as HTMLInputElement),
 	};
 	return login;
 }
@@ -428,11 +587,11 @@ function getLogin() {
 /**
  * Render the player mode text inside game form
  * @param {Boolean} isMultiPlayer Is playing in online multiplayer mode or hotSeat mode
- * @returns {Object} JQuery<HTMLElement>
+ * @returns {Object} HTMLElement
  */
 function renderPlayerModeType(isMultiPlayer) {
-	const playerModeType = $j('#playerModeType');
-	return isMultiPlayer ? playerModeType.text('[ Online ]') : playerModeType.text('[ Hotseat ]');
+	const playerModeType = $.getId('playerModeType');
+	return isMultiPlayer ? $.setText(playerModeType, '[ Online ]') : $.setText(playerModeType, '[ Hotseat ]');
 }
 
 /**
@@ -441,16 +600,16 @@ function renderPlayerModeType(isMultiPlayer) {
  */
 export function getGameConfig() {
 	const defaultConfig = {
-		playerMode: parseInt($j('input[name="playerMode"]:checked').val() as string, 10),
-		creaLimitNbr: parseInt($j('input[name="activeUnits"]:checked').val() as string, 10), // DP counts as One
-		unitDrops: parseInt($j('input[name="unitDrops"]:checked').val() as string, 10),
-		abilityUpgrades: parseInt($j('input[name="abilityUpgrades"]:checked').val() as string, 10),
-		plasma_amount: parseInt($j('input[name="plasmaPoints"]:checked').val() as string, 10),
-		turnTimePool: parseInt($j('input[name="turnTime"]:checked').val() as string, 10),
-		timePool: parseInt($j('input[name="timePool"]:checked').val() as string, 10) * 60,
-		background_image: $j('input[name="combatLocation"]:checked').val(),
-		combatLocation: $j('input[name="combatLocation"]:checked').val(),
-		fullscreenMode: $j('#fullscreen').hasClass('fullscreenMode'),
+		playerMode: parseInt($.getCheckedValue('input[name="playerMode"]'), 10),
+		creaLimitNbr: parseInt($.getCheckedValue('input[name="activeUnits"]'), 10), // DP counts as One
+		unitDrops: parseInt($.getCheckedValue('input[name="unitDrops"]'), 10),
+		abilityUpgrades: parseInt($.getCheckedValue('input[name="abilityUpgrades"]'), 10),
+		plasma_amount: parseInt($.getCheckedValue('input[name="plasmaPoints"]'), 10),
+		turnTimePool: parseInt($.getCheckedValue('input[name="turnTime"]'), 10),
+		timePool: parseInt($.getCheckedValue('input[name="timePool"]'), 10) * 60,
+		background_image: $.getCheckedValue('input[name="combatLocation"]'),
+		combatLocation: $.getCheckedValue('input[name="combatLocation"]'),
+		fullscreenMode: $.hasClass($.getId('fullscreen'), 'fullscreenMode'),
 	};
 	return defaultConfig;
 }

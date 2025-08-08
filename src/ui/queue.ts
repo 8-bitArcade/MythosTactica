@@ -1,6 +1,6 @@
 import { throttle } from 'underscore';
-import { Creature } from '../creature';
-import { CreatureQueue } from '../creature_queue';
+import { Creature } from '../models/Creature';
+import { CreatureQueue } from '../models/Creature_queue';
 
 const CONST = {
 	animDurationMS: 500,

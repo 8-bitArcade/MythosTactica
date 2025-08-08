@@ -1,7 +1,6 @@
-import * as $j from 'jquery';
 import Game from '../game';
 import MatchI from './match';
-import { Player } from '../player';
+import { Player } from '../models/Player';
 
 type matchData = {
 	match_id?: string;
@@ -20,12 +19,12 @@ export default class Gameplay {
 		this.match = match;
 		this.matchData = {};
 		this.configData = {};
-		this.players = game.players;
+		this.players = game.playerManager.players;
 		this.matchUsers = [];
 	}
 
 	moveTo(o) {
-		if (this.game.activeCreature.player.id != this.match.userTurn) {
+		if (this.game.playerManager.activeCreature.player.id != this.match.userTurn) {
 			return;
 		}
 		const data = o;
@@ -35,7 +34,7 @@ export default class Gameplay {
 		this.game.UI.active = true;
 	}
 	useAbility(o) {
-		if (this.game.activeCreature.player.id != this.match.userTurn) {
+		if (this.game.playerManager.activeCreature.player.id != this.match.userTurn) {
 			return;
 		}
 		const data = o;
@@ -45,7 +44,7 @@ export default class Gameplay {
 		this.game.UI.active = true;
 	}
 	activatePlayer() {
-		this.match.activePlayer = this.game.activeCreature.player.id;
+		this.match.activePlayer = this.game.playerManager.activeCreature.player.id;
 		if (this.match.userTurn == this.match.activePlayer) {
 			this.game.freezedInput = false;
 			return;
@@ -56,18 +55,18 @@ export default class Gameplay {
 	updateTurn() {
 		if (this.match.userTurn == this.match.activePlayer) {
 			this.game.UI.banner(
-				this.match.users[this.game.activeCreature.player.id].playername + ' turn',
+				this.match.users[this.game.playerManager.activeCreature.player.id].playername + ' turn',
 			);
 			const id = this.match.matchData.match_id;
 			const opCode = '2';
-			const data = { activePlayer: this.game.activeCreature.player.id };
+			const data = { activePlayer: this.game.playerManager.activeCreature.player.id };
 			this.match.sendMatchData({ match_id: id, op_code: opCode, data: data });
 		}
 		this.activatePlayer();
 	}
 
 	delay() {
-		if (this.game.activeCreature.player.id != this.match.userTurn) {
+		if (this.game.playerManager.activeCreature.player.id != this.match.userTurn) {
 			return;
 		}
 		const id = this.matchData.match_id;
