@@ -211,7 +211,7 @@ export class GameManager {
 		}
 		// console.log(this);
 		this.startLoading();
-		// Sounds
+		// Sounds - Initialize with comprehensive error handling
 		const paths = [
 			'sounds/step',
 			'sounds/swing',
@@ -223,10 +223,26 @@ export class GameManager {
 			'sounds/mudbath',
 			'sounds/AncientBeast',
 		];
-		this.soundsys = new SoundSys({ paths });
-		this.musicPlayer = this.soundsys.musicPlayer;
-		// Assign soundsys to the game instance so other components can access it
-		this.game.soundsys = this.soundsys;
+		
+		try {
+			this.soundsys = new SoundSys({ 
+				paths,
+				musicVolume: 1,
+				effectsVolume: 1,
+				heartbeatVolume: 1,
+				announcerVolume: 1
+			});
+			this.musicPlayer = this.soundsys.musicPlayer;
+			// Assign soundsys to the game instance so other components can access it
+			this.game.soundsys = this.soundsys;
+			
+			console.log('[GameManager] SoundSys initialized successfully');
+		} catch (error) {
+			console.error('[GameManager] Failed to initialize SoundSys:', error);
+			// Create a fallback null sound system
+			this.soundsys = null;
+			this.game.soundsys = null;
+		}
 		this.game.currentScene.load.on('filecomplete', this.loadFinish, this);
 		this.game.currentScene.load.on('complete', onLoadCompleteFn);
 
@@ -529,7 +545,9 @@ export class GameManager {
 
 				// Play heartbeat sound on other player's turn
 				if (differentPlayer) {
-					this.soundsys.playHeartBeat('sounds/heartbeat');
+					if (this.soundsys) {
+						this.soundsys.playHeartBeat('sounds/heartbeat');
+					}
 				}
 
 				this.log('Active Creature : %CreatureName' + this.activeCreature.id + '%');
@@ -886,8 +904,11 @@ export class GameManager {
 	 *
 	 * End the game and print stats
 	 */
-	endGame() {		this.soundsys.stopMusic();
-		this.endGameSound = this.soundsys.playSFX('sounds/drums');
+	endGame() {
+		if (this.soundsys) {
+			this.soundsys.stopMusic();
+			this.endGameSound = this.soundsys.playSFX('sounds/drums');
+		}
 
 		if (this.playerManager) {
 			this.playerManager.stopTimer();

@@ -11,7 +11,7 @@ import { Team, isTeam } from './team';
 import * as arrayUtils from './arrayUtils';
 import Game from '../game';
 import { DEBUG } from '../debug';
-import { HEX_WIDTH_PX } from './const';
+import { HEX_WIDTH_PX, HEX_HEIGHT_PX } from './const';
 import { Point } from './pointfacade';
 import { AugmentedMatrix } from './matrices';
 
@@ -137,6 +137,16 @@ export class HexGrid {
 	dropGroup: Phaser.GameObjects.Container;
 	creatureGroup: Phaser.GameObjects.Container;
 	trapOverGroup: Phaser.GameObjects.Container;
+	
+	// Phaser 3 graphics objects for efficient rendering
+	gridGraphics: Phaser.GameObjects.Graphics;
+	backgroundGraphics: Phaser.GameObjects.Graphics;
+	overlayGraphics: Phaser.GameObjects.Graphics;
+	
+	// Performance optimization
+	private renderCache: Map<string, any>;
+	private isDirty: boolean;
+	private lastRenderFrame: number;
 	selectedHex: Hex;
 	_executionMode: boolean;
 	materialize_overlay: any;
@@ -213,6 +223,14 @@ export class HexGrid {
 		this.trapOverGroup = this.scene.add.container(0, 0);
 		this.trapOverGroup.setScale(1, 0.75);
 		this.display.add(this.trapOverGroup);
+
+		// Initialize Phaser 3 graphics objects for efficient rendering
+		this.initializeGraphicsObjects();
+		
+		// Initialize performance optimization
+		this.renderCache = new Map();
+		this.isDirty = true;
+		this.lastRenderFrame = 0;
 
 		// Populate grid
 		for (let row = 0; row < numRows; row++) {
@@ -879,11 +897,21 @@ export class HexGrid {
 
 		// Save the last Query
 		this.lastQueryOpt = { ...o };
+		
+		// Notify InputManager of query start
+		if (this.game.inputManager) {
+			this.game.inputManager.onHexQueryStart(o);
+		}
 
-		this.updateDisplay();
-		// Block all hexes
+		// Prepare batch updates for better performance
+		const hexUpdates: Array<{ hex: Hex; displayClasses?: string; overlayClasses?: string; reachable?: boolean }> = [];
+
+		// Block all hexes and prepare updates
 		this.forEachHex((hex) => {
+			const update: any = { hex };
+			
 			hex.unsetReachable();
+			update.reachable = false;
 
 			if (o.hideNonTarget) {
 				hex.setNotTarget();
@@ -891,24 +919,41 @@ export class HexGrid {
 				hex.unsetNotTarget();
 			}
 
+			// Handle display classes
+			let displayClasses = hex.displayClasses;
+			
 			if (o.hexesDashed.indexOf(hex) !== -1) {
-				hex.displayVisualState('dashed');
+				displayClasses = displayClasses.includes('dashed') ? displayClasses : displayClasses + ' dashed';
 			} else {
-				hex.cleanDisplayVisualState('dashed');
+				displayClasses = displayClasses.replace(/\bdashed\b/g, '').trim();
 			}
 
 			if (o.hexesDeadZone.indexOf(hex) !== -1) {
-				hex.displayVisualState('deadzone');
+				displayClasses = displayClasses.includes('deadzone') ? displayClasses : displayClasses + ' deadzone';
 			} else {
-				hex.cleanDisplayVisualState('deadzone');
+				displayClasses = displayClasses.replace(/\bdeadzone\b/g, '').trim();
 			}
 
 			if (o.shrunkenHexes.includes(hex)) {
-				hex.displayVisualState('shrunken');
+				displayClasses = displayClasses.includes('shrunken') ? displayClasses : displayClasses + ' shrunken';
 			} else {
-				hex.cleanDisplayVisualState('shrunken');
+				displayClasses = displayClasses.replace(/\bshrunken\b/g, '').trim();
 			}
+
+			if (displayClasses !== hex.displayClasses) {
+				update.displayClasses = displayClasses;
+				hex.displayClasses = displayClasses;
+			}
+
+			hexUpdates.push(update);
 		});
+
+		// Apply batch updates for better performance
+		if (hexUpdates.length > 0) {
+			this.batchUpdateHexStates(hexUpdates);
+		}
+
+		this.updateDisplay();
 
 		// Cleanup
 		if (this.materialize_overlay) {
@@ -967,29 +1012,54 @@ export class HexGrid {
 				return true;
 			}
 		};
+		// Prepare batch updates for reachable hexes
+		const reachableUpdates: Array<{ hex: Hex; displayClasses?: string; overlayClasses?: string; reachable?: boolean }> = [];
+
 		// Set reachable the given hexes
 		o.hexes.forEach((hex) => {
-			hex.setReachable();	
+			const update: any = { hex, reachable: true };
+			
+			hex.setReachable();
+			
 			if (o.hideNonTarget) {
 				hex.unsetNotTarget();
 			}
+			
 			if (o.targeting) {
-				if (hex.creature instanceof Creature) {					if (hex.creature.id != this.game.playerManager.activeCreature.id) {
-						hex.overlayVisualState('reachable h_player' + hex.creature.team);
-						// Add dashed hexagons under targets for ranged abilities with team color
-						hex.displayVisualState('dashed player' + hex.creature.team);
+				if (hex.creature instanceof Creature) {
+					if (hex.creature.id != this.game.playerManager.activeCreature.id) {
+						const overlayClasses = hex.overlayClasses + ' reachable h_player' + hex.creature.team;
+						const displayClasses = hex.displayClasses + ' dashed player' + hex.creature.team;
+						
+						update.overlayClasses = overlayClasses;
+						update.displayClasses = displayClasses;
+						
+						hex.overlayClasses = overlayClasses;
+						hex.displayClasses = displayClasses;
+						
 						// Ensure dashed hexagons are on top for better visibility
 						hex.grid.displayHexesGroup.bringToTop(hex.display);
 					}
 				} else {
 					if (o.fillOnlyHoveredCreature && !emptyHexBeforeCreature(hex)) {
-						hex.displayVisualState('dashed');
+						const displayClasses = hex.displayClasses + ' dashed';
+						update.displayClasses = displayClasses;
+						hex.displayClasses = displayClasses;
 					} else {
-						hex.overlayVisualState('reachable h_player' + this.game.playerManager.activeCreature.team);
+						const overlayClasses = hex.overlayClasses + ' reachable h_player' + this.game.playerManager.activeCreature.team;
+						update.overlayClasses = overlayClasses;
+						hex.overlayClasses = overlayClasses;
 					}
 				}
 			}
+			
+			reachableUpdates.push(update);
 		});
+
+		// Apply batch updates for better performance
+		if (reachableUpdates.length > 0) {
+			this.batchUpdateHexStates(reachableUpdates);
+		}
 
 		if (o.callbackAfterQueryHexes) {
 			o.callbackAfterQueryHexes();
@@ -1060,7 +1130,9 @@ export class HexGrid {
 					if (!this.onShoutCooldown) {
 						this.onShoutCooldown = true;
 						const unitOnClickedHexName = hex.creature.name;
-						game.soundsys.playShout(unitOnClickedHexName);
+						if (game.soundsys) {
+							game.soundsys.playShout(unitOnClickedHexName);
+						}
 						hex.creature.hint(unitOnClickedHexName, 'creature_name');
 
 						setTimeout(() => {
@@ -1305,12 +1377,24 @@ export class HexGrid {
 	cleanHex(hex: Hex) {
 		hex.cleanDisplayVisualState();
 		hex.cleanOverlayVisualState();
+		
+		// Clear graphics cache for this hex to force re-render
+		this.clearHexGraphics(hex);
+		
+		// Mark grid as dirty for graphics-based rendering
+		this.markDirty();
 	}
 
 	/**
 	 * Update overlay hexes with creature positions
+	 * Enhanced with graphics-based rendering optimization
 	 */
 	updateDisplay() {
+		// Only render if something has changed (performance optimization)
+		if (!this.isDirty && this.lastRenderFrame === this.scene.sys.game.loop.frame) {
+			return;
+		}
+
 		this.cleanDisplay();
 		this.cleanOverlay();
 
@@ -1324,6 +1408,11 @@ export class HexGrid {
 				}
 			});
 		});
+
+		// Render dynamic elements using graphics API
+		this.renderDynamicElements();
+		this.isDirty = false;
+		this.lastRenderFrame = this.scene.sys.game.loop.frame;
 	}
 
 	/**
@@ -1470,6 +1559,9 @@ export class HexGrid {
 				hex.cleanDisplayVisualState('showGrid');
 			}
 		});
+		
+		// Mark grid as dirty for graphics-based rendering
+		this.markDirty();
 	}
 
 	showMovementRange(creature) {
@@ -1655,6 +1747,8 @@ export class HexGrid {
 	 */
 	cleanDisplay(cssClass = '') {
 		this.allhexes.forEach((hex) => hex.cleanDisplayVisualState(cssClass));
+		// Mark grid as dirty for graphics-based rendering
+		this.markDirty();
 	}
 
 	/**
@@ -1662,6 +1756,8 @@ export class HexGrid {
 	 */
 	cleanOverlay(cssClass = '') {
 		this.allhexes.forEach((hex) => hex.cleanOverlayVisualState(cssClass));
+		// Mark grid as dirty for graphics-based rendering
+		this.markDirty();
 	}
 
 	/**
@@ -1765,5 +1861,390 @@ export class HexGrid {
 				ease: 'Linear'
 			});
 		}
+	}
+
+	/**
+	 * Initialize Phaser 3 graphics objects for efficient hex grid rendering
+	 */
+	private initializeGraphicsObjects(): void {
+		// Background graphics for the base hex grid
+		this.backgroundGraphics = this.scene.add.graphics();
+		this.backgroundGraphics.setDepth(-10); // Ensure it's behind other elements
+		this.gridGroup.add(this.backgroundGraphics);
+
+		// Main grid graphics for hex outlines and basic rendering
+		this.gridGraphics = this.scene.add.graphics();
+		this.gridGraphics.setDepth(-5);
+		this.gridGroup.add(this.gridGraphics);
+
+		// Overlay graphics for dynamic states (hover, selection, etc.)
+		this.overlayGraphics = this.scene.add.graphics();
+		this.overlayGraphics.setDepth(5);
+		this.gridGroup.add(this.overlayGraphics);
+
+		// Draw the initial grid
+		this.renderBaseGrid();
+	}
+
+	/**
+	 * Render the base hex grid using Phaser 3 graphics API
+	 */
+	private renderBaseGrid(): void {
+		if (!this.backgroundGraphics) return;
+
+		this.backgroundGraphics.clear();
+		
+		// Set line style for hex outlines
+		this.backgroundGraphics.lineStyle(1, 0x444444, 0.3);
+		
+		// Draw each hex outline
+		this.forEachHex((hex) => {
+			this.drawHexOutline(this.backgroundGraphics, hex, false);
+		});
+	}
+
+	/**
+	 * Draw a hexagon outline at the specified hex position
+	 */
+	private drawHexOutline(graphics: Phaser.GameObjects.Graphics, hex: Hex, filled: boolean = false): void {
+		const centerX = hex.displayPos.x;
+		const centerY = hex.displayPos.y;
+		const radius = HEX_WIDTH_PX * 0.5;
+		
+		// Calculate hexagon vertices
+		const vertices: { x: number; y: number }[] = [];
+		for (let i = 0; i < 6; i++) {
+			const angle = (Math.PI / 3) * i;
+			vertices.push({
+				x: centerX + radius * Math.cos(angle),
+				y: centerY + radius * Math.sin(angle)
+			});
+		}
+
+		// Draw the hexagon
+		graphics.beginPath();
+		graphics.moveTo(vertices[0].x, vertices[0].y);
+		
+		for (let i = 1; i < vertices.length; i++) {
+			graphics.lineTo(vertices[i].x, vertices[i].y);
+		}
+		
+		graphics.closePath();
+		
+		if (filled) {
+			graphics.fillPath();
+		} else {
+			graphics.strokePath();
+		}
+	}
+
+
+
+	/**
+	 * Render dynamic elements (overlays, selections, etc.) using graphics API
+	 */
+	private renderDynamicElements(): void {
+		if (!this.overlayGraphics) return;
+
+		this.overlayGraphics.clear();
+
+		// Render hex states efficiently
+		this.forEachHex((hex) => {
+			this.renderHexState(hex);
+		});
+	}
+
+	/**
+	 * Render individual hex state using graphics API for better performance
+	 */
+	private renderHexState(hex: Hex): void {
+		const cacheKey = `${hex.x}-${hex.y}-${hex.displayClasses}-${hex.overlayClasses}-${hex.reachable}`;
+		
+		// Check cache to avoid redundant rendering
+		if (this.renderCache.has(cacheKey)) {
+			return;
+		}
+
+		// Clear previous graphics for this hex
+		this.clearHexGraphics(hex);
+
+		// Render based on hex state
+		if (hex.reachable) {
+			this.renderReachableHex(hex);
+		}
+
+		if (hex.displayClasses.includes('creature')) {
+			this.renderCreatureHex(hex);
+		}
+
+		if (hex.displayClasses.includes('dashed')) {
+			this.renderDashedHex(hex);
+		}
+
+		if (hex.displayClasses.includes('deadzone')) {
+			this.renderDeadzoneHex(hex);
+		}
+
+		if (hex.overlayClasses.includes('hover')) {
+			this.renderHoverHex(hex);
+		}
+
+		if (hex.displayClasses.includes('shrunken')) {
+			this.renderShrunkenHex(hex);
+		}
+
+		// Cache this render state
+		this.renderCache.set(cacheKey, true);
+	}
+
+	/**
+	 * Clear graphics for a specific hex
+	 */
+	private clearHexGraphics(hex: Hex): void {
+		// Since we're using a single graphics object, we'll manage clearing differently
+		// This is handled by the main clear() call in renderDynamicElements
+		
+		// Remove from cache to force re-render
+		const cacheKey = `${hex.x}-${hex.y}-${hex.displayClasses}-${hex.overlayClasses}-${hex.reachable}`;
+		this.renderCache.delete(cacheKey);
+	}
+
+	/**
+	 * Clean up graphics objects and resources
+	 */
+	cleanupGraphics(): void {
+		if (this.backgroundGraphics) {
+			this.backgroundGraphics.clear();
+		}
+		if (this.gridGraphics) {
+			this.gridGraphics.clear();
+		}
+		if (this.overlayGraphics) {
+			this.overlayGraphics.clear();
+		}
+		
+		this.renderCache.clear();
+		this.isDirty = true;
+	}
+
+	/**
+	 * Render a reachable hex with appropriate styling
+	 */
+	private renderReachableHex(hex: Hex): void {
+		if (!this.overlayGraphics) return;
+
+		// Get player color
+		const activeCreature = this.game.playerManager?.activeCreature;
+		const playerTeam = activeCreature ? activeCreature.team : 0;
+		
+		// Set fill style based on player team
+		const colors = [0x3366cc, 0xcc3333, 0x33cc33, 0xcccc33]; // Blue, Red, Green, Yellow
+		const color = colors[playerTeam] || 0x3366cc;
+		
+		this.overlayGraphics.fillStyle(color, 0.2);
+		this.drawHexOutline(this.overlayGraphics, hex, true);
+	}
+
+	/**
+	 * Render a hex containing a creature
+	 */
+	private renderCreatureHex(hex: Hex): void {
+		if (!this.overlayGraphics || !hex.creature) return;
+
+		// Get creature team color
+		const teamColors = [0x3366cc, 0xcc3333, 0x33cc33, 0xcccc33];
+		const color = teamColors[hex.creature.team] || 0x666666;
+		
+		this.overlayGraphics.fillStyle(color, 0.4);
+		this.overlayGraphics.lineStyle(2, color, 0.8);
+		this.drawHexOutline(this.overlayGraphics, hex, true);
+	}
+
+	/**
+	 * Render a dashed hex (for abilities with limited range)
+	 */
+	private renderDashedHex(hex: Hex): void {
+		if (!this.overlayGraphics) return;
+
+		// Use dashed line style
+		this.overlayGraphics.lineStyle(2, 0x888888, 0.6);
+		
+		// Draw dashed outline by drawing segments
+		const centerX = hex.displayPos.x;
+		const centerY = hex.displayPos.y;
+		const radius = HEX_WIDTH_PX * 0.5;
+		
+		for (let i = 0; i < 6; i++) {
+			const angle1 = (Math.PI / 3) * i;
+			const angle2 = (Math.PI / 3) * (i + 1);
+			
+			const x1 = centerX + radius * Math.cos(angle1);
+			const y1 = centerY + radius * Math.sin(angle1);
+			const x2 = centerX + radius * Math.cos(angle2);
+			const y2 = centerY + radius * Math.sin(angle2);
+			
+			// Draw dashed line segments
+			const segments = 3;
+			for (let j = 0; j < segments; j++) {
+				if (j % 2 === 0) { // Only draw every other segment for dashed effect
+					const t1 = j / segments;
+					const t2 = (j + 0.5) / segments;
+					
+					const sx = x1 + (x2 - x1) * t1;
+					const sy = y1 + (y2 - y1) * t1;
+					const ex = x1 + (x2 - x1) * t2;
+					const ey = y1 + (y2 - y1) * t2;
+					
+					this.overlayGraphics.beginPath();
+					this.overlayGraphics.moveTo(sx, sy);
+					this.overlayGraphics.lineTo(ex, ey);
+					this.overlayGraphics.strokePath();
+				}
+			}
+		}
+	}
+
+	/**
+	 * Render a deadzone hex (areas that block abilities)
+	 */
+	private renderDeadzoneHex(hex: Hex): void {
+		if (!this.overlayGraphics) return;
+
+		this.overlayGraphics.fillStyle(0x660000, 0.3);
+		this.overlayGraphics.lineStyle(2, 0x990000, 0.7);
+		this.drawHexOutline(this.overlayGraphics, hex, true);
+	}
+
+	/**
+	 * Render a hovered hex with highlight effect
+	 */
+	private renderHoverHex(hex: Hex): void {
+		if (!this.overlayGraphics) return;
+
+		this.overlayGraphics.fillStyle(0xffffff, 0.2);
+		this.overlayGraphics.lineStyle(3, 0xffffff, 0.8);
+		this.drawHexOutline(this.overlayGraphics, hex, true);
+	}
+
+	/**
+	 * Render a shrunken hex (for abilities with falloff)
+	 */
+	private renderShrunkenHex(hex: Hex): void {
+		if (!this.overlayGraphics) return;
+
+		const shrinkScale = 0.5;
+		const centerX = hex.displayPos.x;
+		const centerY = hex.displayPos.y;
+		const radius = HEX_WIDTH_PX * 0.5 * shrinkScale;
+		
+		this.overlayGraphics.fillStyle(0x888888, 0.3);
+		this.overlayGraphics.lineStyle(1, 0x888888, 0.6);
+		
+		// Draw smaller hexagon
+		const vertices: { x: number; y: number }[] = [];
+		for (let i = 0; i < 6; i++) {
+			const angle = (Math.PI / 3) * i;
+			vertices.push({
+				x: centerX + radius * Math.cos(angle),
+				y: centerY + radius * Math.sin(angle)
+			});
+		}
+
+		this.overlayGraphics.beginPath();
+		this.overlayGraphics.moveTo(vertices[0].x, vertices[0].y);
+		
+		for (let i = 1; i < vertices.length; i++) {
+			this.overlayGraphics.lineTo(vertices[i].x, vertices[i].y);
+		}
+		
+		this.overlayGraphics.closePath();
+		this.overlayGraphics.fillPath();
+		this.overlayGraphics.strokePath();
+	}
+
+	/**
+	 * Mark the grid as dirty to trigger re-rendering
+	 */
+	markDirty(): void {
+		this.isDirty = true;
+		this.renderCache.clear(); // Clear cache when marking dirty
+	}
+
+	/**
+	 * Optimized method to update only specific hexes
+	 */
+	updateHexes(hexes: Hex[]): void {
+		if (!this.overlayGraphics) return;
+
+		// Clear cache for updated hexes
+		hexes.forEach(hex => {
+			const cacheKey = `${hex.x}-${hex.y}-${hex.displayClasses}-${hex.overlayClasses}-${hex.reachable}`;
+			this.renderCache.delete(cacheKey);
+		});
+
+		// Re-render only the affected hexes
+		hexes.forEach(hex => {
+			this.renderHexState(hex);
+		});
+	}
+
+	/**
+	 * Enhanced grid interaction handling through Phaser 3's input system
+	 */
+	enableGridInteraction(): void {
+		// The individual hex input handling is already set up in the Hex constructor
+		// This method can be used to enable/disable grid-wide interactions
+		
+		this.forEachHex((hex) => {
+			if (hex.hitBox) {
+				hex.hitBox.setInteractive();
+			}
+		});
+	}
+
+	/**
+	 * Disable grid interaction
+	 */
+	disableGridInteraction(): void {
+		this.forEachHex((hex) => {
+			if (hex.hitBox) {
+				hex.hitBox.disableInteractive();
+			}
+		});
+	}
+
+	/**
+	 * Performance optimization: Batch update multiple hex states
+	 */
+	batchUpdateHexStates(updates: Array<{ hex: Hex; displayClasses?: string; overlayClasses?: string; reachable?: boolean }>): void {
+		// Apply all updates first
+		updates.forEach(update => {
+			if (update.displayClasses !== undefined) {
+				update.hex.displayClasses = update.displayClasses;
+			}
+			if (update.overlayClasses !== undefined) {
+				update.hex.overlayClasses = update.overlayClasses;
+			}
+			if (update.reachable !== undefined) {
+				update.hex.reachable = update.reachable;
+			}
+		});
+
+		// Then render all affected hexes in one batch
+		const affectedHexes = updates.map(update => update.hex);
+		this.updateHexes(affectedHexes);
+	}
+
+	/**
+	 * Get performance metrics for debugging
+	 */
+	getPerformanceMetrics(): object {
+		return {
+			cacheSize: this.renderCache.size,
+			isDirty: this.isDirty,
+			lastRenderFrame: this.lastRenderFrame,
+			currentFrame: this.scene.sys.game.loop.frame,
+			hexCount: this.allhexes.length
+		};
 	}
 }

@@ -12,7 +12,21 @@
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true,
 		"useDefineForClassFields": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"strict": false,
+		"noImplicitAny": false,
+		"strictNullChecks": false,
+		"strictFunctionTypes": true,
+		"strictBindCallApply": false,
+		"strictPropertyInitialization": false,
+		"noImplicitReturns": false,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedIndexedAccess": false,
+		"noImplicitOverride": false,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"exactOptionalPropertyTypes": false
 	},
-	"include": ["src", "types"]
+	"include": ["src", "types"],
+	"exclude": ["node_modules", "deploy", "**/*.test.ts", "**/*.spec.ts"]
 }

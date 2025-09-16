@@ -298,7 +298,7 @@ export class Hotkeys {
 	}
 }
 
-export function getHotKeys(hk) {
+export function getHotKeys(hk: Hotkeys): { [keyCode: string]: { onkeydown?: (event: KeyboardEvent) => void; onkeyup?: (event: KeyboardEvent) => void } } {
 	const hotkeys = {
 		KeyS: {
 			onkeydown(event) {

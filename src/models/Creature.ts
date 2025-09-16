@@ -323,7 +323,8 @@ export class Creature {
 
 		this.updateHex();
 
-		this.creatureSprite = new CreatureSprite(this);
+		// Use factory method for sprite creation
+		this.creatureSprite = CreatureSprite.createCreatureSprite(this);
 
 		if (!this.temp) {
 			let tempCreature: Creature | undefined = undefined;
@@ -773,6 +774,15 @@ export class Creature {
 
 	resetBounce() {
 		this.creatureSprite.setHealthBounce(false);
+	}
+
+	/**
+	 * Update creature's visual state - called during render cycle
+	 */
+	updateVisualState() {
+		if (this.creatureSprite && !this.creatureSprite.isDestroyed()) {
+			this.creatureSprite.updateVisualState();
+		}
 	}
 
 	/**
@@ -1764,54 +1774,124 @@ class CreatureSprite {
 	private _frameInfo: { originX: number; originY: number };
 	private _creatureSize: number;
 	private _creatureTeam: PlayerID;
+	private _creature: Creature;
 
 	private _isXray = false;
+	private _isDestroyed = false;
 	constructor(creature: Creature) {
-		const { game, player, type, team, display, size, id, health } = creature;
-		const dir = player.flipped ? -1 : 1;
+		this._creature = creature;
+		this._phaser = creature.game;
+		this._creatureSize = creature.size;
+		this._creatureTeam = creature.team;
+		this._frameInfo = { 
+			originX: creature.display['offset-x'], 
+			originY: creature.display['offset-y'] 
+		};
+
+		// Create sprite using factory method
+		this.createSpriteComponents(creature);
+		
+		// Initialize positioning and direction
+		this.setHex(creature.hexagons[creature.size - 1]);
+		this.setDir(creature.player.flipped ? -1 : 1);
+	}
+
+	/**
+	 * Factory method for creating sprite components with proper textures
+	 */
+	private createSpriteComponents(creature: Creature) {
+		const { game, player, type, team, display, size, health } = creature;
 		const scene = game.currentScene;
 
-		this._phaser = game;
-		this._creatureSize = size;
-		this._creatureTeam = team;
-		this._frameInfo = { originX: display['offset-x'], originY: display['offset-y'] };
+		if (!scene) {
+			throw new Error('Cannot create creature sprite: no active scene');
+		}
 
-		// Create main container group
-		const group = scene.add.container(0, 0);
-		group.setAlpha(0);
-		game.grid.creatureGroup.add(group);
+		// Create main container group using Phaser 3 transform system
+		this._group = scene.add.container(0, 0);
+		this._group.setAlpha(0);
+		this._group.setData('creatureId', creature.id);
+		game.grid.creatureGroup.add(this._group);
 
-		const isDarkPriest = type === '--';
-		const darkPriestColorOrEmpty = isDarkPriest ? creature.player.color : '';
-
-		// Adding sprite
-		const sprite = scene.add.sprite(0, 0, creature.name + darkPriestColorOrEmpty + '_cardboard');
-		sprite.setOrigin(0.5, 1);
+		// Create main sprite with proper texture
+		const textureKey = this.getTextureKey(creature);
+		this._sprite = scene.add.sprite(0, 0, textureKey);
+		this._sprite.setOrigin(0.5, 1);
 		
-		// Placing sprite
-		sprite.x =
-			(!player.flipped
-				? display['offset-x']
-				: HEX_WIDTH_PX * size - sprite.width - display['offset-x']) +
-			sprite.width / 2;
-		sprite.y = display['offset-y'] + sprite.height;
+		// Apply initial positioning using Phaser 3 transform system
+		this.updateSpritePosition(player.flipped);
+		this._group.add(this._sprite);
 
-		group.add(sprite);
+		// Create hint group container
+		this._hintGrp = scene.add.container(
+			0.5 * HEX_WIDTH_PX * size, 
+			-this._sprite.height + 5
+		);
+		this._group.add(this._hintGrp);
 
-		// Hint Group
-		const hintGrp = scene.add.container(0.5 * HEX_WIDTH_PX * size, -sprite.height + 5);
-		group.add(hintGrp);
+		// Create health indicator components
+		this.createHealthIndicator(player, team, size, health);
+	}
 
-		// Health indicator group
-		const healthIndicatorGroup = scene.add.container(0, 0);
+	/**
+	 * Get the appropriate texture key for the creature
+	 */
+	private getTextureKey(creature: Creature): string {
+		const isDarkPriest = creature.type === '--';
+		const darkPriestColorOrEmpty = isDarkPriest ? creature.player.color : '';
+		return creature.name + darkPriestColorOrEmpty + '_cardboard';
+	}
 
-		const healthIndicatorSprite = scene.add.sprite(
+	/**
+	 * Static factory method for creating creature sprites with proper textures
+	 */
+	static createCreatureSprite(creature: Creature): CreatureSprite {
+		return new CreatureSprite(creature);
+	}
+
+	/**
+	 * Static factory method for creating temporary creature sprites for preview
+	 */
+	static createTempCreatureSprite(creature: Creature, alpha: number = 0.5): CreatureSprite {
+		const sprite = new CreatureSprite(creature);
+		sprite.setAlpha(alpha);
+		return sprite;
+	}
+
+	/**
+	 * Update sprite texture (useful for state changes)
+	 */
+	updateTexture(textureKey?: string): void {
+		if (this._isDestroyed) return;
+
+		const newTextureKey = textureKey || this.getTextureKey(this._creature);
+		
+		// Validate texture exists before setting
+		const scene = this._phaser.currentScene;
+		if (scene && scene.textures.exists(newTextureKey)) {
+			this._sprite.setTexture(newTextureKey);
+			// Update position after texture change as dimensions might have changed
+			this.updateSpritePosition(this._creature.player.flipped);
+		} else {
+			console.warn(`Texture '${newTextureKey}' not found for creature ${this._creature.name}`);
+		}
+	}
+
+	/**
+	 * Create health indicator components
+	 */
+	private createHealthIndicator(player: Player, team: PlayerID, size: UnitSize, health: number) {
+		const scene = this._phaser.currentScene;
+		
+		this._healthIndicatorGroup = scene.add.container(0, 0);
+
+		this._healthIndicatorSprite = scene.add.sprite(
 			player.flipped ? 19 : 19 + HEX_WIDTH_PX * (size - 1),
 			49,
 			'p' + team + '_health',
 		);
 
-		const healthIndicatorText = scene.add.text(
+		this._healthIndicatorText = scene.add.text(
 			player.flipped ? HEX_WIDTH_PX * 0.5 : HEX_WIDTH_PX * (size - 0.5),
 			63,
 			health.toString(),
@@ -1825,24 +1905,26 @@ class CreatureSprite {
 				strokeThickness: 6,
 			},
 		);
-		healthIndicatorText.setOrigin(0.5, 0.5);
+		this._healthIndicatorText.setOrigin(0.5, 0.5);
 		
-		healthIndicatorGroup.add([healthIndicatorSprite, healthIndicatorText]);
-		healthIndicatorGroup.setVisible(false);
-		group.add(healthIndicatorGroup);
-
-		this._group = group;
-		this._sprite = sprite;
-
-		this._hintGrp = hintGrp;
-
-		this._healthIndicatorGroup = healthIndicatorGroup;
-		this._healthIndicatorSprite = healthIndicatorSprite;
-		this._healthIndicatorText = healthIndicatorText;
+		this._healthIndicatorGroup.add([this._healthIndicatorSprite, this._healthIndicatorText]);
+		this._healthIndicatorGroup.setVisible(false);
+		this._group.add(this._healthIndicatorGroup);
 		this._healthIndicatorTween = null;
+	}
 
-		this.setHex(creature.hexagons[size - 1]);
-		this.setDir(dir);
+	/**
+	 * Update sprite position based on display info and flip state
+	 */
+	private updateSpritePosition(flipped: boolean) {
+		const display = this._frameInfo;
+		const size = this._creatureSize;
+		
+		this._sprite.x = (!flipped
+			? display.originX
+			: HEX_WIDTH_PX * size - this._sprite.width - display.originX) +
+			this._sprite.width / 2;
+		this._sprite.y = display.originY + this._sprite.height;
 	}
 
 	// NOTE: This is the old API exposed by Creature.
@@ -1882,69 +1964,118 @@ class CreatureSprite {
 	}
 
 	setAlpha(a: number, durationMS = 0): Promise<CreatureSprite> {
+		if (this._isDestroyed) {
+			return Promise.resolve(this);
+		}
+		
 		if (durationMS === 0 || this._group.alpha === a) {
 			this._group.alpha = a;
-			return new Promise((resolve) => {
-				resolve(this);
-			});
+			return Promise.resolve(this);
 		}
 		return this._promisifyTween(this._group, { alpha: a }, durationMS);
 	}
 
 	setAngle(a: number, durationMS = 0): Promise<CreatureSprite> {
+		if (this._isDestroyed) {
+			return Promise.resolve(this);
+		}
+		
 		if (durationMS === 0 || this._group.angle === a) {
 			this._group.angle = a;
-			return new Promise((resolve) => {
-				resolve(this);
-			});
+			return Promise.resolve(this);
 		} else {
 			return this._promisifyTween(this._group, { angle: a }, durationMS);
 		}
 	}
 
 	setHex(h: Hex, durationMS = 0): Promise<CreatureSprite> {
+		if (this._isDestroyed) {
+			return Promise.resolve(this);
+		}
 		return this.setPx(h.displayPos, durationMS);
 	}
 
 	setPx(pos: { x: number; y: number }, durationMS = 0): Promise<CreatureSprite> {
+		if (this._isDestroyed) {
+			return Promise.resolve(this);
+		}
+		
 		if (durationMS === 0) {
 			this._group.setPosition(pos.x, pos.y);
-			return new Promise((resolve) => {
-				resolve(this);
-			});
+			return Promise.resolve(this);
 		} else {
 			return this._promisifyTween(this._group, pos, durationMS);
 		}
 	}
 
+	/**
+	 * Set sprite direction using Phaser 3 transform system
+	 */
 	setDir(dir: 1 | -1) {
-		// Phaser 3: setScale replaces scale.setTo
+		if (this._isDestroyed) return;
+		
+		// Use Phaser 3's setScale for horizontal flipping
 		this._sprite.setScale(dir, 1);
 
-		// Phaser 3: sprite.x logic remains, but texture width is accessed via displayWidth
-		this._sprite.x =
-			(dir === 1
-				? this._frameInfo.originX
-				: HEX_WIDTH_PX * this._creatureSize -
-				  this._sprite.displayWidth -
-				  this._frameInfo.originX) +
-			this._sprite.displayWidth / 2;
-		this._healthIndicatorSprite.x = dir === -1 ? 19 : 19 + HEX_WIDTH_PX * (this._creatureSize - 1);
-		this._healthIndicatorText.x =
-			dir === -1 ? HEX_WIDTH_PX * 0.5 : HEX_WIDTH_PX * (this._creatureSize - 0.5);
+		// Update sprite position based on direction using Phaser 3 transform system
+		this.updateSpritePosition(dir === -1);
+		
+		// Update health indicator positions
+		this.updateHealthIndicatorPosition(dir === -1);
+	}
+
+	/**
+	 * Update health indicator position based on direction
+	 */
+	private updateHealthIndicatorPosition(flipped: boolean) {
+		if (this._isDestroyed) return;
+		
+		this._healthIndicatorSprite.x = flipped ? 19 : 19 + HEX_WIDTH_PX * (this._creatureSize - 1);
+		this._healthIndicatorText.x = flipped ? HEX_WIDTH_PX * 0.5 : HEX_WIDTH_PX * (this._creatureSize - 0.5);
+	}
+
+	/**
+	 * Set sprite scale using Phaser 3 transform system
+	 */
+	setScale(scaleX: number, scaleY: number = scaleX): Promise<CreatureSprite> {
+		if (this._isDestroyed) {
+			return Promise.resolve(this);
+		}
+		
+		this._sprite.setScale(scaleX, scaleY);
+		return Promise.resolve(this);
+	}
+
+	/**
+	 * Get current sprite scale
+	 */
+	getScale(): { x: number; y: number } {
+		if (this._isDestroyed) {
+			return { x: 1, y: 1 };
+		}
+		
+		return {
+			x: this._sprite.scaleX,
+			y: this._sprite.scaleY
+		};
 	}
 
 	xray(enable: boolean) {
-		if (this._isXray === enable) return;
+		if (this._isDestroyed || this._isXray === enable) return;
+		
 		this._isXray = enable;
-		// Phaser 3: Use scene.tweens.add for tweens
-		this._phaser.currentScene.tweens.add({
+		const scene = this._phaser.currentScene;
+		
+		if (!scene || !scene.tweens) return;
+		
+		// Use Phaser 3's tween system for xray effect
+		scene.tweens.add({
 			targets: this._sprite,
 			alpha: enable ? 0.5 : 1.0,
 			duration: 250,
 			ease: 'Linear',
 		});
-		this._phaser.currentScene.tweens.add({
+		scene.tweens.add({
 			targets: this._healthIndicatorGroup,
 			alpha: enable ? 0.5 : 1.0,
 			duration: 250,
@@ -1953,17 +2084,25 @@ class CreatureSprite {
 	}
 
 	setHealth(number: number, type: HealthBubbleType) {
+		if (this._isDestroyed) return;
+		
 		this._healthIndicatorText.setText(number + '');
-		// Phaser 3: setTexture replaces loadTexture
+		// Use Phaser 3's setTexture method
 		this._healthIndicatorSprite.setTexture(`p${this._creatureTeam}_${type}`);
 	}
 
 	showHealth(enable: boolean) {
+		if (this._isDestroyed) return;
+		
 		this._healthIndicatorGroup.setVisible(enable);
 	}
 
 	setHealthBounce(enable: boolean) {
+		if (this._isDestroyed) return;
+		
 		const scene = this._phaser.currentScene;
+		if (!scene || !scene.tweens) return;
+		
 		if (enable) {
 			const bounceHeight = 10;
 			const durationMS = 350;
@@ -1998,10 +2137,18 @@ class CreatureSprite {
 		}
 	}
 	getPos() {
+		if (this._isDestroyed) {
+			return { x: 0, y: 0 };
+		}
 		return { x: this._group.x, y: this._group.y };
 	}
 
 	hint(text: string, hintType: CreatureHintType) {
+		if (this._isDestroyed) return;
+		
+		const scene = this._phaser.currentScene;
+		if (!scene || !scene.tweens) return;
+		
 		const tooltipSpeed = 250;
 		const tooltipDisplaySpeed = 500;
 		const tooltipTransition = 'Linear';
@@ -2051,109 +2198,262 @@ class CreatureSprite {
 		// Remove constant element
 		// Animation length reduced from 250 to 100 to prevent animation overlap
 		this._hintGrp.each(
-		(hint: Phaser.GameObjects.Text | Phaser.GameObjects.Sprite) => {
-			if (hint.getData('hintType') === 'confirm' || hint.getData('hintType') === 'no_action') {
-				hint.setData('hintType', 'confirm_deleted');
-				this._phaser.currentScene.tweens.add({
-					targets: hint,
+		(hintChild: Phaser.GameObjects.Text | Phaser.GameObjects.Sprite) => {
+			if (hintChild.getData('hintType') === 'confirm' || hintChild.getData('hintType') === 'no_action') {
+				hintChild.setData('hintType', 'confirm_deleted');
+				scene.tweens.add({
+					targets: hintChild,
 					alpha: 0,
 					duration: 100,
 					ease: 'Linear',
-					onComplete: () => hint.destroy(),
+					onComplete: () => {
+						if (hintChild && hintChild.destroy) {
+							hintChild.destroy();
+						}
+					},
 				});
 			}
 		},
 		this
 	);
 
-	const hint = this._phaser.currentScene.add.text(0, 50, text, style);
+	const hint = scene.add.text(0, 50, text, style);
 	hint.setOrigin(0.5, 0.5);
-hint.setAlpha(0);
-hint.setData('hintType', hintType);
-hint.setData('tweenAlpha', null);
-hint.setData('tweenPos', null);
+	hint.setAlpha(0);
+	hint.setData('hintType', hintType);
+	hint.setData('tweenAlpha', null);
+	hint.setData('tweenPos', null);
 
-if (hintType === 'confirm' || hintType === 'no_action') {
-	hint.setData('tweenAlpha', this._phaser.currentScene.tweens.add({
-		targets: hint,
-		alpha: 1,
-		duration: tooltipSpeed,
-		ease: 'Linear',
-	}));
-} else {
-	hint.setData('tweenAlpha', this._phaser.currentScene.tweens.add({
-		targets: hint,
-		alpha: 1,
-		duration: tooltipSpeed,
-		ease: 'Linear',
-		onComplete: () => {
-			this._phaser.currentScene.tweens.add({
-				targets: hint,
-				alpha: 0,
+	if (hintType === 'confirm' || hintType === 'no_action') {
+		hint.setData('tweenAlpha', scene.tweens.add({
+			targets: hint,
+			alpha: 1,
+			duration: tooltipSpeed,
+			ease: 'Linear',
+		}));
+	} else {
+		hint.setData('tweenAlpha', scene.tweens.add({
+			targets: hint,
+			alpha: 1,
+			duration: tooltipSpeed,
+			ease: 'Linear',
+			onComplete: () => {
+				if (!this._isDestroyed && scene.tweens) {
+					scene.tweens.add({
+						targets: hint,
+						alpha: 0,
+						duration: tooltipSpeed,
+						ease: 'Linear',
+						onComplete: () => {
+							if (hint && hint.destroy) {
+								hint.destroy();
+							}
+						},
+					});
+				}
+			},
+		}));
+	}
+
+	if (hintType === 'no_action' || hintType === 'confirm') {
+		// Add "Skip turn" frame
+		const frame = scene.add.sprite(0, 50, 'frame');
+		frame.setOrigin(0.5, 0.175);
+		frame.setScale(0.75);
+		frame.setAlpha(0);
+		frame.setData('hintType', hintType);
+		frame.setData('tweenAlpha', null);
+		frame.setData('tweenPos', null);
+		scene.tweens.add({
+			targets: frame,
+			alpha: 1,
+			duration: tooltipSpeed,
+			ease: 'Linear',
+		});
+		this._hintGrp.add(frame);
+
+		// Add "Skip turn" icon
+		const skipTurnIcon = scene.add.sprite(0, 50, 'skip');
+		skipTurnIcon.setOrigin(0.5, 0.7);
+		skipTurnIcon.setScale(0.15);
+		skipTurnIcon.setAlpha(0);
+		skipTurnIcon.setData('hintType', hintType);
+		skipTurnIcon.setData('tweenAlpha', null);
+		skipTurnIcon.setData('tweenPos', null);
+		scene.tweens.add({
+			targets: skipTurnIcon,
+			alpha: 1,
+			duration: tooltipSpeed,
+			ease: 'Linear',
+		});
+		this._hintGrp.add(skipTurnIcon);
+	}
+
+	this._hintGrp.add(hint);
+
+	// Stacking with proper null checks
+	this._hintGrp.list.forEach((hintItem: Phaser.GameObjects.Text | Phaser.GameObjects.Sprite, index: number) => {
+		const childrenLength = this._hintGrp.list.length;
+		const offset = -50 * (childrenLength - index - 1);
+		if (hintItem.getData('tweenPos')) {
+			hintItem.getData('tweenPos').stop();
+		}
+		if (!this._isDestroyed && scene.tweens) {
+			hintItem.setData('tweenPos', scene.tweens.add({
+				targets: hintItem,
+				y: offset,
 				duration: tooltipSpeed,
 				ease: 'Linear',
-				onComplete: () => hint.destroy(),
-			});
-		},
-	}));
-}
-
-if (hintType === 'no_action' || hintType === 'confirm') {
-	// Add "Skip turn" frame
-	const frame = this._phaser.currentScene.add.sprite(0, 50, 'frame');
-	frame.setOrigin(0.5, 0.175);
-	frame.setScale(0.75);
-	frame.setAlpha(0);
-	frame.setData('hintType', hintType);
-	frame.setData('tweenAlpha', null);
-	frame.setData('tweenPos', null);
-	this._phaser.currentScene.tweens.add({
-		targets: frame,
-		alpha: 1,
-		duration: tooltipSpeed,
-		ease: 'Linear',
+			}));
+		}
 	});
-	this._hintGrp.add(frame);
-
-	// Add "Skip turn" icon
-	const skipTurnIcon = this._phaser.currentScene.add.sprite(0, 50, 'skip');
-	skipTurnIcon.setOrigin(0.5, 0.7);
-	skipTurnIcon.setScale(0.15);
-	skipTurnIcon.setAlpha(0);
-	skipTurnIcon.setData('hintType', hintType);
-	skipTurnIcon.setData('tweenAlpha', null);
-	skipTurnIcon.setData('tweenPos', null);
-	this._phaser.currentScene.tweens.add({
-		targets: skipTurnIcon,
-		alpha: 1,
-		duration: tooltipSpeed,
-		ease: 'Linear',
-	});
-	this._hintGrp.add(skipTurnIcon);
-}
-
-this._hintGrp.add(hint);
-
-// Stacking
-this._hintGrp.list.forEach((hint: Phaser.GameObjects.Text | Phaser.GameObjects.Sprite, index: number) => {
-	const childrenLength = this._hintGrp.list.length;
-	const offset = -50 * (childrenLength - index - 1);
-	if (hint.getData('tweenPos')) {
-		hint.getData('tweenPos').stop();
-	}
-	hint.setData('tweenPos', this._phaser.currentScene.tweens.add({
-		targets: hint,
-		y: offset,
-		duration: tooltipSpeed,
-		ease: 'Linear',
-	}));
-});
 	}
 
+	/**
+	 * Comprehensive cleanup and disposal for memory management
+	 */
 	destroy() {
+		if (this._isDestroyed) return;
+		
+		this._isDestroyed = true;
+
+		// Stop any active tweens to prevent memory leaks
+		this.stopAllTweens();
+
+		// Clean up health indicator tween
+		if (this._healthIndicatorTween && this._healthIndicatorTween.isPlaying()) {
+			this._healthIndicatorTween.stop();
+			this._healthIndicatorTween = null;
+		}
+
+		// Clean up hint group children
+		this.cleanupHintGroup();
+
+		// Remove from parent container
 		const parent = this._group.parentContainer;
 		if (parent) {
 			parent.remove(this._group);
+		}
+
+		// Destroy all game objects for proper memory cleanup
+		this.destroyGameObjects();
+
+		// Clear references
+		this.clearReferences();
+	}
+
+	/**
+	 * Stop all active tweens on sprite components
+	 */
+	private stopAllTweens() {
+		const scene = this._phaser.currentScene;
+		if (!scene || !scene.tweens) return;
+
+		// Stop tweens on main group
+		scene.tweens.killTweensOf(this._group);
+		
+		// Stop tweens on sprite
+		scene.tweens.killTweensOf(this._sprite);
+		
+		// Stop tweens on health indicator components
+		scene.tweens.killTweensOf(this._healthIndicatorGroup);
+		scene.tweens.killTweensOf(this._healthIndicatorSprite);
+		scene.tweens.killTweensOf(this._healthIndicatorText);
+	}
+
+	/**
+	 * Clean up hint group and its children
+	 */
+	private cleanupHintGroup() {
+		if (!this._hintGrp) return;
+
+		// Destroy all hint children
+		this._hintGrp.each((child: Phaser.GameObjects.GameObject) => {
+			if (child && child.destroy) {
+				child.destroy();
+			}
+		});
+		
+		this._hintGrp.removeAll(true);
+	}
+
+	/**
+	 * Destroy all Phaser game objects
+	 */
+	private destroyGameObjects() {
+		// Destroy health indicator components
+		if (this._healthIndicatorText && this._healthIndicatorText.destroy) {
+			this._healthIndicatorText.destroy();
+		}
+		if (this._healthIndicatorSprite && this._healthIndicatorSprite.destroy) {
+			this._healthIndicatorSprite.destroy();
+		}
+		if (this._healthIndicatorGroup && this._healthIndicatorGroup.destroy) {
+			this._healthIndicatorGroup.destroy();
+		}
+
+		// Destroy hint group
+		if (this._hintGrp && this._hintGrp.destroy) {
+			this._hintGrp.destroy();
+		}
+
+		// Destroy main sprite
+		if (this._sprite && this._sprite.destroy) {
+			this._sprite.destroy();
+		}
+
+		// Destroy main container
+		if (this._group && this._group.destroy) {
+			this._group.destroy();
+		}
+	}
+
+	/**
+	 * Clear all object references for garbage collection
+	 */
+	private clearReferences() {
+		this._group = null;
+		this._sprite = null;
+		this._hintGrp = null;
+		this._healthIndicatorGroup = null;
+		this._healthIndicatorSprite = null;
+		this._healthIndicatorText = null;
+		this._healthIndicatorTween = null;
+		this._creature = null;
+		this._phaser = null;
+		this._frameInfo = null;
+	}
+
+	/**
+	 * Check if sprite is destroyed
+	 */
+	isDestroyed(): boolean {
+		return this._isDestroyed;
+	}
+
+	/**
+	 * Update visual state - called during render cycle
+	 */
+	updateVisualState(): void {
+		if (this._isDestroyed) return;
+
+		// Update health display if needed
+		if (this._creature.health !== parseInt(this._healthIndicatorText.text)) {
+			this.setHealth(this._creature.health, 'health');
+		}
+
+		// Update position if creature moved
+		const currentPos = this.getPos();
+		const targetHex = this._creature.hexagons[this._creature.size - 1];
+		if (targetHex && (currentPos.x !== targetHex.displayPos.x || currentPos.y !== targetHex.displayPos.y)) {
+			this.setHex(targetHex);
+		}
+
+		// Update alpha based on creature state
+		if (this._creature.dead && this._group.alpha > 0.3) {
+			this.setAlpha(0.3);
+		} else if (!this._creature.dead && this._group.alpha < 1) {
+			this.setAlpha(1);
 		}
 	}
 }

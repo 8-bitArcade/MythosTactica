@@ -201,7 +201,7 @@ export default class MatchI {
 	async matchMaker(d, gc) {
 		const matchList = await this.client.listMatches(this.session);
 		let matchUsers = await this.readMatches();
-		matchUsers = _.filter(matchUsers, function (obj) {
+		matchUsers = _.filter(Array.isArray(matchUsers) ? matchUsers : [], function (obj) {
 			console.log(obj);
 			if ('string_properties' in obj && typeof obj.string_properties.match_id != 'undefined') {
 				const c = _.findWhere(matchList.matches, { match_id: obj.string_properties.match_id });

@@ -187,7 +187,9 @@ export class PlayerManager {
             this.UI.resizeDash();
         });
 
-        this.game.soundsys.playMusic();
+        if (this.game.soundsys) {
+            this.game.soundsys.playMusic();
+        }
         if (DEBUG_DISABLE_MUSIC) {
             this.musicPlayer.audio.pause();
         }

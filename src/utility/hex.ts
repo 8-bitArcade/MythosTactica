@@ -550,6 +550,23 @@ export class Hex {
 			this.stopSpinning();
 		}
 
+		// Mark the grid as dirty for graphics-based rendering
+		if (this.grid) {
+			this.grid.markDirty();
+		}
+
+		// Keep sprite-based rendering for compatibility, but optimize it
+		this.updateSpriteDisplay();
+		this.updateSpriteOverlay();
+		this.updateCoordinateDisplay();
+	}
+
+	/**
+	 * Update sprite display with optimized rendering
+	 */
+	private updateSpriteDisplay(): void {
+		if (!this.display) return;
+
 		// Display Hex
 		let targetAlpha = this.reachable || Boolean(this.displayClasses.match(/creature/g));
 
@@ -557,12 +574,16 @@ export class Hex {
 		targetAlpha = Boolean(this.displayClasses.match(/showGrid/g)) || targetAlpha;
 		targetAlpha = Boolean(this.displayClasses.match(/dashed/g)) || targetAlpha;
 		targetAlpha = Boolean(this.displayClasses.match(/deadzone/g)) || targetAlpha;
+		
+		// Set texture based on display classes
 		if (this.displayClasses.match(/0|1|2|3/)) {
 			const player = this.displayClasses.match(/0|1|2|3/);
 			this.display.setTexture(`hex_p${player}`);
 			this.grid.displayHexesGroup.bringToTop(this.display);
 		} else if (this.displayClasses.match(/adj/)) {
-			this.display.setTexture('hex_path');		} else if (this.displayClasses.match(/dashed/)) {			// Check if this is a dashed hex with a creature (blocked target)
+			this.display.setTexture('hex_path');
+		} else if (this.displayClasses.match(/dashed/)) {
+			// Check if this is a dashed hex with a creature (blocked target)
 			if (this.creature instanceof Creature) {
 				// Use colored dashed texture for the creature's team
 				this.display.setTexture(`hex_dashed_p${this.creature.team}`);
@@ -580,6 +601,8 @@ export class Hex {
 		}
 
 		this.display.alpha = targetAlpha ? 1 : 0;
+		
+		// Handle shrunken hexes
 		if (this.displayClasses.match(/shrunken/)) {
 			this.display.setScale(shrinkScale);
 			this.overlay.setScale(shrinkScale);
@@ -593,34 +616,20 @@ export class Hex {
 			this.display.setPosition(this.hitBox.x, this.hitBox.y);
 			this.overlay.setPosition(this.hitBox.x, this.hitBox.y);
 		}
-		// Display Coord
-		if (this.displayClasses.match(/showGrid/g)) {
-			if (!(this.coordText && this.coordText.active)) {				this.coordText = this.grid.scene.add.text(
-					this.originalDisplayPos.x + 45,
-					this.originalDisplayPos.y + 63,
-					this.coord,
-					{
-						fontFamily: 'Play',
-						fontSize: '30pt',
-						color: '#000000',
-						align: 'center',
-					},
-				);
-				if (this.creature || this.trap || this.drop) {
-					this.coordText.setStroke('#ffffff', 5);
-				}
-				this.coordText.setOrigin(0.5);
-				this.grid.overlayHexesGroup.add(this.coordText);
-			}
-		} else if (this.coordText && this.coordText.active) {
-			this.coordText.destroy();
-		}
+	}
+
+	/**
+	 * Update sprite overlay with optimized rendering
+	 */
+	private updateSpriteOverlay(): void {
+		if (!this.overlay) return;
 
 		// Overlay Hex
-		targetAlpha = Boolean(this.overlayClasses.match(/hover|creature/g));
+		let targetAlpha = Boolean(this.overlayClasses.match(/hover|creature/g));
 
 		if (this.overlayClasses.match(/0|1|2|3/)) {
-			const player = this.overlayClasses.match(/0|1|2|3/);			if (this.overlayClasses.match(/reachable/)) {
+			const player = this.overlayClasses.match(/0|1|2|3/);
+			if (this.overlayClasses.match(/reachable/)) {
 				targetAlpha = true;
 				this.overlay.setTexture('hex_path');
 			} else if (
@@ -648,6 +657,35 @@ export class Hex {
 		}
 
 		this.overlay.alpha = targetAlpha ? 1 : 0;
+	}
+
+	/**
+	 * Update coordinate display for grid debugging
+	 */
+	private updateCoordinateDisplay(): void {
+		// Display Coord
+		if (this.displayClasses.match(/showGrid/g)) {
+			if (!(this.coordText && this.coordText.active)) {
+				this.coordText = this.grid.scene.add.text(
+					this.originalDisplayPos.x + 45,
+					this.originalDisplayPos.y + 63,
+					this.coord,
+					{
+						fontFamily: 'Play',
+						fontSize: '30pt',
+						color: '#000000',
+						align: 'center',
+					},
+				);
+				if (this.creature || this.trap || this.drop) {
+					this.coordText.setStroke('#ffffff', 5);
+				}
+				this.coordText.setOrigin(0.5);
+				this.grid.overlayHexesGroup.add(this.coordText);
+			}
+		} else if (this.coordText && this.coordText.active) {
+			this.coordText.destroy();
+		}
 	}
 
 	/**

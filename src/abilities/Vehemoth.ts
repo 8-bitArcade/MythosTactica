@@ -325,9 +325,9 @@ export default (G: Game) => {
     typeof tween === 'object' &&
     'onComplete' in tween &&
     tween.onComplete &&
-    typeof tween.onComplete.add === 'function'
+    typeof (tween.onComplete as any).add === 'function'
 ) {
-					tween.onComplete.add(function () {
+					(tween.onComplete as any).add(function () {
 						if (sprite && typeof sprite === 'object' && 'destroy' in sprite && typeof (sprite as any).destroy === 'function') {
 							(sprite as any).destroy();
 						}

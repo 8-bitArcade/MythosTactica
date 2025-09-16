@@ -18,6 +18,7 @@ import { throttle } from 'underscore';
 import { DEBUG_DISABLE_HOTKEYS } from '../debug';
 
 import { cycleAudioMode, getAudioMode, AudioMode } from '../sound/soundsys';
+import { UIComponents, UIState, UIInterface, ClickMethod, AudioModeUI } from '../../types/ui';
 
 /**
  * Class UI
@@ -739,7 +740,8 @@ export class UI {
 	 *
 	 * @param {string} message Event name.
 	 * @param {object} payload Event payload.
-	 */	_handleUiEvent(message, payload) {
+	 */
+	_handleUiEvent(message: string, payload?: any): void {
 		if (message === 'toggleDash') {
 			this.toggleDash(false);
 			this.closeMusicPlayer();
@@ -771,7 +773,7 @@ export class UI {
 		}
 	}
 
-	showAbilityCosts(abilityId) {
+	showAbilityCosts(abilityId: number): void {
 		const game = this.game,
 			creature = game.activeCreature,
 			ab = creature.abilities[abilityId];
@@ -803,7 +805,7 @@ export class UI {
 		}
 	}
 
-	hideAbilityCosts() {
+	hideAbilityCosts(): void {
 		const game = this.game,
 			creature = game.activeCreature;
 		// Reset energy bar to match actual energy value
@@ -813,7 +815,7 @@ export class UI {
 		this.healthBar.previewSize(0);
 	}
 
-	selectPreviousAbility() {
+	selectPreviousAbility(): void {
 		const game = this.game,
 			b = this.selectedAbility == -1 ? 4 : this.selectedAbility;
 
@@ -832,7 +834,7 @@ export class UI {
 	/**
 	 * Cycles to next available ability. Returns the ability number selected or -1 if deselected.
 	 */
-	selectNextAbility() {
+	selectNextAbility(): number {
 		const game = this.game,
 			b = this.selectedAbility == -1 ? 0 : this.selectedAbility;
 		if (this.selectedAbility == 3) {
@@ -865,7 +867,7 @@ export class UI {
 			}
 		}
 	}
-	resizeDash() {
+	resizeDash(): void {
 		const cardwrapper = document.getElementById('cardwrapper');
 		const card = document.getElementById('card');
 		const materializeButton = document.getElementById('materialize_button');
@@ -914,7 +916,8 @@ export class UI {
 	 * @param {string} creatureType Creature type
 	 * @param {number} player Player ID
 	 * @param {'emptyHex' | 'portrait' | 'grid'} clickMethod Method used to view creatures.
-	 */	showCreature(creatureType, player, clickMethod) {
+	 */
+	showCreature(creatureType: string, player?: number, clickMethod?: ClickMethod): void {
 		const game = this.game;
 		
 		// Early validation checks
@@ -980,7 +983,7 @@ export class UI {
 					const target = e.currentTarget as HTMLElement;
 					const playerAttribute = target.getAttribute('player');
 					const playerId = playerAttribute ? parseInt(playerAttribute, 10) : 0;
-					this.showCreature('--', playerId, '');
+					this.showCreature('--', playerId, 'grid');
 				});
 			});
 		}
@@ -1186,7 +1189,7 @@ export class UI {
 			}
 			// Switch to turn player's dark priest
 			this.materializeButton.click = () => {
-				this.showCreature('--', activeCreature.player.id, '');
+				this.showCreature('--', activeCreature.player.id, 'grid');
 			};
 
 			const cardSideA = document.querySelector('#card .sideA') as HTMLElement;
@@ -1460,7 +1463,7 @@ export class UI {
 		// If no available types, default to priest
 		if (availableTypes.length === 0) {
 			console.warn('showRandomCreature: No available creatures to summon');
-			this.showCreature('--', game.playerManager.activeCreature.team, '');
+			this.showCreature('--', game.playerManager.activeCreature.team, 'grid');
 			return '--';
 		}
 
@@ -1488,7 +1491,7 @@ export class UI {
 		});
 
 		// Show the random unit selected
-		this.showCreature(typeToPass, game.playerManager.activeCreature.team, '');
+		this.showCreature(typeToPass, game.playerManager.activeCreature.team, 'grid');
 
 		return typeToPass;
 	}
@@ -1862,11 +1865,11 @@ export class UI {
 			// Optional: select a random creature from the grid
 			this.showRandomCreature();
 		} else if (!randomize) {
-			this.showCreature('--', game.playerManager.activeCreature.team, '');
+			this.showCreature('--', game.playerManager.activeCreature.team, 'grid');
 		} else if (this.lastViewedCreature) {
-			this.showCreature(this.lastViewedCreature, game.playerManager.activeCreature.team, '');
+			this.showCreature(this.lastViewedCreature, game.playerManager.activeCreature.team, 'grid');
 		} else {
-			this.showCreature(game.playerManager.activeCreature.type, game.playerManager.activeCreature.team, '');
+			this.showCreature(game.playerManager.activeCreature.type, game.playerManager.activeCreature.team, 'grid');
 		}
 	}	closeDash() {
 		const game = this.game;
@@ -1900,7 +1903,7 @@ export class UI {
 		const creatureType = this.selectedCreature;
 
 		if (creatureType === '--') {
-			this.showCreature('W1', this.selectedPlayer, '');
+			this.showCreature('W1', this.selectedPlayer, 'grid');
 			return;
 		}
 
@@ -1908,7 +1911,7 @@ export class UI {
 		const newRealm = game.realms[currentRealmIndex - 1];
 		if (newRealm && newRealm !== '-') {
 			const nextCreature = newRealm + creatureType[1];
-			this.showCreature(nextCreature, this.selectedPlayer, '');
+			this.showCreature(nextCreature, this.selectedPlayer, 'grid');
 		}
 	}
 
@@ -1918,7 +1921,7 @@ export class UI {
 		const game = this.game;
 		const creatureType = this.selectedCreature;
 		if (creatureType === '--') {
-			this.showCreature('A1', this.selectedPlayer, '');
+			this.showCreature('A1', this.selectedPlayer, 'grid');
 			return;
 		}
 
@@ -1926,7 +1929,7 @@ export class UI {
 		const newRealm = game.realms[currentRealmIndex + 1];
 		if (newRealm) {
 			const nextCreature = newRealm + creatureType[1];
-			this.showCreature(nextCreature, this.selectedPlayer, '');
+			this.showCreature(nextCreature, this.selectedPlayer, 'grid');
 		}
 	}
 
@@ -1938,7 +1941,7 @@ export class UI {
 		const col = parseInt(creatureType[1]);
 		if (col - 1 < 1) return;
 		const nextCreature = creatureType[0] + (col - 1);
-		this.showCreature(nextCreature, this.selectedPlayer, '');
+		this.showCreature(nextCreature, this.selectedPlayer, 'grid');
 	}
 
 	gridSelectRight() {
@@ -1949,7 +1952,7 @@ export class UI {
 		const col = parseInt(creatureType[1]);
 		if (col + 1 > 7) return;
 		const nextCreature = creatureType[0] + (col + 1);
-		this.showCreature(nextCreature, this.selectedPlayer, '');
+		this.showCreature(nextCreature, this.selectedPlayer, 'grid');
 	}
 
 	gridSelectNext() {
@@ -1975,7 +1978,7 @@ export class UI {
 					}					if (valid) {
 						nextCreature = realm + '1';
 						this.lastViewedCreature = nextCreature;
-						this.showCreature(nextCreature, this.selectedPlayer, '');
+						this.showCreature(nextCreature, this.selectedPlayer, 'grid');
 						return;
 					}
 				}
@@ -2005,7 +2008,7 @@ export class UI {
 				}				if (valid) {
 					nextCreature = creatureType[0] + (parseInt(creatureType[1]) + 1);
 					this.lastViewedCreature = nextCreature;
-					this.showCreature(nextCreature, this.selectedPlayer, '');
+					this.showCreature(nextCreature, this.selectedPlayer, 'grid');
 					return;
 				}
 			}
@@ -2038,7 +2041,7 @@ export class UI {
 					}					if (valid) {
 						nextCreature = realm + '7';
 						this.lastViewedCreature = nextCreature;
-						this.showCreature(nextCreature, this.selectedPlayer, '');
+						this.showCreature(nextCreature, this.selectedPlayer, 'grid');
 						return;
 					}
 				}
@@ -2066,7 +2069,7 @@ export class UI {
 				}				if (valid) {
 					nextCreature = creatureType[0] + (parseInt(creatureType[1]) - 1);
 					this.lastViewedCreature = nextCreature;
-					this.showCreature(nextCreature, this.selectedPlayer, '');
+					this.showCreature(nextCreature, this.selectedPlayer, 'grid');
 					return;
 				}
 			}
@@ -2221,7 +2224,9 @@ export class UI {
 
 				// After .3s play the upgrade sound
 				setTimeout(() => {
-					game.soundsys.playSFX('sounds/upgrade');
+					if (game.soundsys) {
+						game.soundsys.playSFX('sounds/upgrade');
+					}
 				}, 300);
 
 				// After 2s remove the background and update the button if it's not a passive
@@ -2733,7 +2738,9 @@ export class UI {
 		};
 
 		const onTurnEndClick = throttle(() => {
-			ui.game.soundsys.playSFX('sounds/MythosTactica');
+			if (ui.game.soundsys) {
+				ui.game.soundsys.playSFX('sounds/MythosTactica');
+			}
 		}, 2000);
 		const onTurnEndMouseEnter = ifGameNotFrozen(() => {
 			if (ui.$brandlogo?.classList) {

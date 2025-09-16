@@ -18,10 +18,102 @@ import {
 // Load the stylesheet
 import './style/main.less';
 
-export type GameConfig = ReturnType<typeof getGameConfig>;
+export type GameConfig = GameConfigType;
+
+// Import type definitions
+import { GameConfig as GameConfigType } from '../types/game';
+
+// Interface for DOM utility functions (replaces jQuery)
+export interface DOMUtilities {
+	// Element selection
+	get(selector: string): HTMLElement | null;
+	getAll(selector: string): NodeListOf<Element>;
+	getId(id: string): HTMLElement | null;
+
+	// DOM manipulation
+	hide(element: HTMLElement | null): void;
+	show(element: HTMLElement | null): void;
+	remove(element: HTMLElement | null): void;
+	addClass(element: HTMLElement | null, className: string): void;
+	removeClass(element: HTMLElement | null, className: string): void;
+	hasClass(element: HTMLElement | null, className: string): boolean;
+	toggleClass(element: HTMLElement | null, className: string): void;
+	setText(element: HTMLElement | null, text: string): void;
+	setHtml(element: HTMLElement | null, html: string): void;
+	html(element: HTMLElement | null, content?: string): string | void;
+	text(element: HTMLElement | null, content?: string): string | void;
+	getValue(element: HTMLInputElement | null): string;
+	setValue(element: HTMLInputElement | null, value: string): void;
+	setChecked(element: HTMLInputElement | null, checked: boolean): void;
+	isVisible(element: HTMLElement | null): boolean;
+	isDisplayed(element: HTMLElement | null): boolean;
+	isVisibilityHidden(element: HTMLElement | null): boolean;
+	getCheckedValue(selector: string): string;
+	trigger(element: HTMLElement | null, eventType: string): void;
+	click(element: HTMLElement | null): void;
+	focus(element: HTMLElement | null): void;
+	setProp(element: HTMLElement | null, prop: string, value: any): void;
+	css(element: HTMLElement | null, styles: { [key: string]: string }): void;
+
+	// Event handling
+	on(selector: string | HTMLElement | Document | null, event: string, handler: EventListener): void;
+	off(selector: string | HTMLElement | null, event: string, handler?: EventListener): void;
+
+	// Form helpers
+	getFormData(form: HTMLFormElement): { [key: string]: string };
+
+	// DOM manipulation - advanced methods
+	createElement(tagName: string, attributes?: { [key: string]: string }, textContent?: string): HTMLElement;
+	append(parent: HTMLElement | null, child: HTMLElement | string): void;
+	prepend(parent: HTMLElement | null, child: HTMLElement | string): void;
+	insertAfter(referenceNode: HTMLElement | null, newNode: HTMLElement): void;
+	insertBefore(referenceNode: HTMLElement | null, newNode: HTMLElement): void;
+
+	// Element relationship methods
+	parent(element: HTMLElement | null): HTMLElement | null;
+	children(element: HTMLElement | null): HTMLElement[];
+	siblings(element: HTMLElement | null): HTMLElement[];
+	find(element: HTMLElement | null, selector: string): HTMLElement | null;
+	findAll(element: HTMLElement | null, selector: string): HTMLElement[];
+	closest(element: HTMLElement | null, selector: string): HTMLElement | null;
+
+	// Attribute and data methods
+	attr(element: HTMLElement | null, name: string, value?: string): string | void;
+	removeAttr(element: HTMLElement | null, name: string): void;
+	data(element: HTMLElement | null, key: string, value?: string): string | void;
+
+	// Position and dimension methods
+	offset(element: HTMLElement | null): { top: number; left: number };
+	position(element: HTMLElement | null): { top: number; left: number };
+	width(element: HTMLElement | null, value?: number): number | void;
+	height(element: HTMLElement | null, value?: number): number | void;
+
+	// Event delegation support
+	delegate(container: HTMLElement | null, selector: string, event: string, handler: EventListener): void;
+
+	// Animation and effects helpers
+	fadeIn(element: HTMLElement | null, duration?: number): void;
+	fadeOut(element: HTMLElement | null, duration?: number): void;
+	slideUp(element: HTMLElement | null, duration?: number): void;
+	slideDown(element: HTMLElement | null, duration?: number): void;
+
+	// Form validation helpers
+	serialize(form: HTMLFormElement): string;
+	validateForm(form: HTMLFormElement, rules: { [key: string]: (value: string) => boolean | string }): { [key: string]: string };
+
+	// CSS manipulation helpers for animations
+	animate(element: HTMLElement | null, properties: { [key: string]: string }, duration?: number, easing?: string): Promise<void>;
+
+	// Utility methods for complex UI interactions
+	scrollTo(element: HTMLElement | null, options?: { top?: number; left?: number; behavior?: 'smooth' | 'auto' }): void;
+	isInViewport(element: HTMLElement | null): boolean;
+
+	// DOM ready
+	ready(callback: () => void): void;
+}
 
 // Utility functions for DOM manipulation (replaces jQuery)
-const $ = {
+const $: DOMUtilities = {
 	// Element selection
 	get: (selector: string): HTMLElement | null => document.querySelector(selector),
 	getAll: (selector: string): NodeListOf<Element> => document.querySelectorAll(selector),
@@ -39,7 +131,7 @@ const $ = {
 	},
 	addClass: (element: HTMLElement | null, className: string): void => {
 		if (element) element.classList.add(className);
-	},	removeClass: (element: HTMLElement | null, className: string): void => {
+	}, removeClass: (element: HTMLElement | null, className: string): void => {
 		if (element) element.classList.remove(className);
 	},
 	hasClass: (element: HTMLElement | null, className: string): boolean => {
@@ -106,7 +198,8 @@ const $ = {
 		}
 	},
 	click: (element: HTMLElement | null): void => {
-		if (element) element.click();	},
+		if (element) element.click();
+	},
 	focus: (element: HTMLElement | null): void => {
 		if (element) element.focus();
 	},
@@ -156,6 +249,312 @@ const $ = {
 		});
 		return result;
 	},
+
+	// DOM manipulation - advanced methods
+	createElement: (tagName: string, attributes?: { [key: string]: string }, textContent?: string): HTMLElement => {
+		const element = document.createElement(tagName);
+		if (attributes) {
+			Object.keys(attributes).forEach(key => {
+				if (key === 'className') {
+					element.className = attributes[key];
+				} else {
+					element.setAttribute(key, attributes[key]);
+				}
+			});
+		}
+		if (textContent) {
+			element.textContent = textContent;
+		}
+		return element;
+	},
+
+	append: (parent: HTMLElement | null, child: HTMLElement | string): void => {
+		if (parent) {
+			if (typeof child === 'string') {
+				parent.insertAdjacentHTML('beforeend', child);
+			} else {
+				parent.appendChild(child);
+			}
+		}
+	},
+
+	prepend: (parent: HTMLElement | null, child: HTMLElement | string): void => {
+		if (parent) {
+			if (typeof child === 'string') {
+				parent.insertAdjacentHTML('afterbegin', child);
+			} else {
+				parent.insertBefore(child, parent.firstChild);
+			}
+		}
+	},
+
+	insertAfter: (referenceNode: HTMLElement | null, newNode: HTMLElement): void => {
+		if (referenceNode && referenceNode.parentNode) {
+			referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+		}
+	},
+
+	insertBefore: (referenceNode: HTMLElement | null, newNode: HTMLElement): void => {
+		if (referenceNode && referenceNode.parentNode) {
+			referenceNode.parentNode.insertBefore(newNode, referenceNode);
+		}
+	},
+
+	// Element relationship methods
+	parent: (element: HTMLElement | null): HTMLElement | null => {
+		return element ? element.parentElement : null;
+	},
+
+	children: (element: HTMLElement | null): HTMLElement[] => {
+		return element ? Array.from(element.children) as HTMLElement[] : [];
+	},
+
+	siblings: (element: HTMLElement | null): HTMLElement[] => {
+		if (!element || !element.parentElement) return [];
+		return Array.from(element.parentElement.children).filter(child => child !== element) as HTMLElement[];
+	},
+
+	find: (element: HTMLElement | null, selector: string): HTMLElement | null => {
+		return element ? element.querySelector(selector) as HTMLElement : null;
+	},
+
+	findAll: (element: HTMLElement | null, selector: string): HTMLElement[] => {
+		return element ? Array.from(element.querySelectorAll(selector)) as HTMLElement[] : [];
+	},
+
+	closest: (element: HTMLElement | null, selector: string): HTMLElement | null => {
+		return element ? element.closest(selector) as HTMLElement : null;
+	},
+
+	// Attribute and data methods
+	attr: (element: HTMLElement | null, name: string, value?: string): string | void => {
+		if (!element) return '';
+		if (value !== undefined) {
+			element.setAttribute(name, value);
+		} else {
+			return element.getAttribute(name) || '';
+		}
+	},
+
+	removeAttr: (element: HTMLElement | null, name: string): void => {
+		if (element) element.removeAttribute(name);
+	},
+
+	data: (element: HTMLElement | null, key: string, value?: string): string | void => {
+		if (!element) return '';
+		const dataKey = `data-${key}`;
+		if (value !== undefined) {
+			element.setAttribute(dataKey, value);
+		} else {
+			return element.getAttribute(dataKey) || '';
+		}
+	},
+
+	// Position and dimension methods
+	offset: (element: HTMLElement | null): { top: number; left: number } => {
+		if (!element) return { top: 0, left: 0 };
+		const rect = element.getBoundingClientRect();
+		return {
+			top: rect.top + window.pageYOffset,
+			left: rect.left + window.pageXOffset
+		};
+	},
+
+	position: (element: HTMLElement | null): { top: number; left: number } => {
+		if (!element) return { top: 0, left: 0 };
+		return {
+			top: element.offsetTop,
+			left: element.offsetLeft
+		};
+	},
+
+	width: (element: HTMLElement | null, value?: number): number | void => {
+		if (!element) return 0;
+		if (value !== undefined) {
+			element.style.width = value + 'px';
+		} else {
+			return element.offsetWidth;
+		}
+	},
+
+	height: (element: HTMLElement | null, value?: number): number | void => {
+		if (!element) return 0;
+		if (value !== undefined) {
+			element.style.height = value + 'px';
+		} else {
+			return element.offsetHeight;
+		}
+	},
+
+	// Event delegation support
+	delegate: (container: HTMLElement | null, selector: string, event: string, handler: EventListener): void => {
+		if (container) {
+			container.addEventListener(event, (e) => {
+				const target = e.target as HTMLElement;
+				const matchedElement = target.closest(selector) as HTMLElement;
+				if (matchedElement && container.contains(matchedElement)) {
+					handler.call(matchedElement, e);
+				}
+			});
+		}
+	},
+
+	// Animation and effects helpers
+	fadeIn: (element: HTMLElement | null, duration: number = 300): void => {
+		if (!element) return;
+		element.style.opacity = '0';
+		element.style.display = '';
+		element.style.transition = `opacity ${duration}ms ease-in-out`;
+
+		// Force reflow
+		element.offsetHeight;
+
+		element.style.opacity = '1';
+
+		setTimeout(() => {
+			element.style.transition = '';
+		}, duration);
+	},
+
+	fadeOut: (element: HTMLElement | null, duration: number = 300): void => {
+		if (!element) return;
+		element.style.transition = `opacity ${duration}ms ease-in-out`;
+		element.style.opacity = '0';
+
+		setTimeout(() => {
+			element.style.display = 'none';
+			element.style.transition = '';
+		}, duration);
+	},
+
+	slideUp: (element: HTMLElement | null, duration: number = 300): void => {
+		if (!element) return;
+		const height = element.offsetHeight;
+		element.style.transition = `height ${duration}ms ease-in-out, padding ${duration}ms ease-in-out, margin ${duration}ms ease-in-out`;
+		element.style.height = height + 'px';
+		element.style.overflow = 'hidden';
+
+		// Force reflow
+		element.offsetHeight;
+
+		element.style.height = '0';
+		element.style.paddingTop = '0';
+		element.style.paddingBottom = '0';
+		element.style.marginTop = '0';
+		element.style.marginBottom = '0';
+
+		setTimeout(() => {
+			element.style.display = 'none';
+			element.style.transition = '';
+			element.style.height = '';
+			element.style.padding = '';
+			element.style.margin = '';
+			element.style.overflow = '';
+		}, duration);
+	},
+
+	slideDown: (element: HTMLElement | null, duration: number = 300): void => {
+		if (!element) return;
+		element.style.display = '';
+		const height = element.scrollHeight;
+		element.style.height = '0';
+		element.style.paddingTop = '0';
+		element.style.paddingBottom = '0';
+		element.style.marginTop = '0';
+		element.style.marginBottom = '0';
+		element.style.overflow = 'hidden';
+		element.style.transition = `height ${duration}ms ease-in-out, padding ${duration}ms ease-in-out, margin ${duration}ms ease-in-out`;
+
+		// Force reflow
+		element.offsetHeight;
+
+		element.style.height = height + 'px';
+		element.style.paddingTop = '';
+		element.style.paddingBottom = '';
+		element.style.marginTop = '';
+		element.style.marginBottom = '';
+
+		setTimeout(() => {
+			element.style.transition = '';
+			element.style.height = '';
+			element.style.overflow = '';
+		}, duration);
+	},
+
+	// Form validation helpers
+	serialize: (form: HTMLFormElement): string => {
+		const formData = new FormData(form);
+		const params = new URLSearchParams();
+		formData.forEach((value, key) => {
+			params.append(key, value as string);
+		});
+		return params.toString();
+	},
+
+	validateForm: (form: HTMLFormElement, rules: { [key: string]: (value: string) => boolean | string }): { [key: string]: string } => {
+		const errors: { [key: string]: string } = {};
+		const formData = $.getFormData(form);
+
+		Object.keys(rules).forEach(fieldName => {
+			const value = formData[fieldName] || '';
+			const result = rules[fieldName](value);
+			if (result !== true) {
+				errors[fieldName] = typeof result === 'string' ? result : 'Invalid value';
+			}
+		});
+
+		return errors;
+	},
+
+	// CSS manipulation helpers for animations
+	animate: (element: HTMLElement | null, properties: { [key: string]: string }, duration: number = 300, easing: string = 'ease-in-out'): Promise<void> => {
+		return new Promise((resolve) => {
+			if (!element) {
+				resolve();
+				return;
+			}
+
+			const transitions: string[] = [];
+			Object.keys(properties).forEach(prop => {
+				const cssProp = prop.replace(/([A-Z])/g, '-$1').toLowerCase();
+				transitions.push(`${cssProp} ${duration}ms ${easing}`);
+			});
+
+			element.style.transition = transitions.join(', ');
+
+			Object.keys(properties).forEach(prop => {
+				(element.style as any)[prop] = properties[prop];
+			});
+
+			setTimeout(() => {
+				element.style.transition = '';
+				resolve();
+			}, duration);
+		});
+	},
+
+	// Utility methods for complex UI interactions
+	scrollTo: (element: HTMLElement | null, options: { top?: number; left?: number; behavior?: 'smooth' | 'auto' } = {}): void => {
+		if (element) {
+			element.scrollTo({
+				top: options.top || 0,
+				left: options.left || 0,
+				behavior: options.behavior || 'smooth'
+			});
+		}
+	},
+
+	isInViewport: (element: HTMLElement | null): boolean => {
+		if (!element) return false;
+		const rect = element.getBoundingClientRect();
+		return (
+			rect.top >= 0 &&
+			rect.left >= 0 &&
+			rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+			rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+		);
+	},
+
 	// DOM ready
 	ready: (callback: () => void): void => {
 		if (document.readyState === 'loading') {
@@ -184,6 +583,9 @@ AB.restoreGame = (str) => AB.currentGame.gamelog.load(str);
 window.AB = AB;
 // Also expose G globally for compatibility with external tools
 (window as any).G = G;
+
+// Expose InputManager for debugging
+(window as any).InputManager = G.inputManager;
 const connect = new Connect(G);
 G.connect = connect;
 
@@ -227,9 +629,9 @@ $.ready(() => {
 	window.addEventListener('focus', G.gameManager.onFocus.bind(G), false);
 
 	// Function to disable scroll and arrow keys
-	function disableScrollAndArrowKeys(element: HTMLElement) {
+	function disableScrollAndArrowKeys(element: HTMLElement): void {
 		if (!element) return;
-		
+
 		element.setAttribute('tabindex', '0'); // Set tabindex to make element focusable
 
 		element.addEventListener('mouseover', () => {
@@ -388,7 +790,7 @@ $.ready(() => {
 		G.gameManager.loadGame(getGameConfig());
 	};
 
-	const restoreGameLog = (log) => {
+	const restoreGameLog = (log: string): void => {
 		G.gamelog.load(log);
 	};
 
@@ -406,7 +808,7 @@ $.ready(() => {
 		return false;
 	});
 	// Register
-	async function register(e) {
+	async function register(e: Event): Promise<boolean> {
 		e.preventDefault(); // Prevent submit
 		const reg = getReg();
 		// Check empty fields
@@ -457,7 +859,7 @@ $.ready(() => {
 		return false; // Prevent submit
 	}
 	$.on('form#register', 'submit', register);
-	async function login(e) {
+	async function login(e: Event): Promise<boolean> {
 		e.preventDefault(); // Prevent submit
 		const login = getLogin();
 		let session;
@@ -495,10 +897,30 @@ $.ready(() => {
 		return false; // Prevent submit
 	}
 	// Login form
-	$.on('form#login', 'submit', login);	$.on('#startMatchButton', 'click', () => {
+	$.on('form#login', 'submit', login); $.on('#startMatchButton', 'click', () => {
 		G.gameManager.loadGame(getGameConfig(), true);
 		return false;
 	});
+
+	// Initialize performance monitor for development
+	if (process.env.NODE_ENV === 'development') {
+		import('./performance/PerformanceMonitor').then(({ PerformanceMonitor }) => {
+			const performanceMonitor = new PerformanceMonitor(G);
+			
+			// Add global access for debugging
+			(window as any).performanceMonitor = performanceMonitor;
+			
+			// Add keyboard shortcut to toggle performance monitor (Ctrl+Shift+P)
+			document.addEventListener('keydown', (event) => {
+				if (event.ctrlKey && event.shiftKey && event.code === 'KeyP') {
+					event.preventDefault();
+					performanceMonitor.toggle();
+				}
+			});
+			
+			console.log('[DEBUG] Performance monitor initialized. Press Ctrl+Shift+P to toggle.');
+		});
+	}
 
 	$.on('#joinMatchButton', 'click', () => {
 		//TODO move to match data received
@@ -589,7 +1011,7 @@ function getLogin() {
  * @param {Boolean} isMultiPlayer Is playing in online multiplayer mode or hotSeat mode
  * @returns {Object} HTMLElement
  */
-function renderPlayerModeType(isMultiPlayer) {
+function renderPlayerModeType(isMultiPlayer: boolean): void {
 	const playerModeType = $.getId('playerModeType');
 	return isMultiPlayer ? $.setText(playerModeType, '[ Online ]') : $.setText(playerModeType, '[ Hotseat ]');
 }
@@ -619,7 +1041,7 @@ export function getGameConfig() {
  * @param {Object} obj The object to test.
  * @return {boolean} Empty or not.
  */
-export function isEmpty(obj) {
+export function isEmpty(obj: object): boolean {
 	for (const key in obj) {
 		if (Object.prototype.hasOwnProperty.call(obj, key)) {
 			return false;
