@@ -19,7 +19,7 @@ This file provides AI assistants with a comprehensive overview of the MythosTact
 
 | Layer | Technology |
 |---|---|
-| Game engine | Phaser 3 (v3.90.0) |
+| Game engine | Phaser 4 (v4.0.0) |
 | Language | TypeScript (v4.5.2), target ES2017 |
 | Build | Webpack 5 + Babel 7 |
 | CSS | LESS preprocessor |
@@ -423,7 +423,7 @@ When working on these areas, prefer incremental improvements that maintain exist
 | `README.md` | Project overview, features, contribution links |
 | `CONTRIBUTING.md` | Dev setup, Node.js requirements, Docker instructions |
 | `HOW_TO_PLAY.md` | Game rules, controls, mechanics guide |
-| `PHASER3_MIGRATION.md` | Migration checklist and status |
+| `PHASER4_MIGRATION.md` | Migration checklist and status |
 | `TRIGGER_SYSTEM_DOCUMENTATION.md` | Full event trigger API reference |
 | `SECURITY.md` | Vulnerability reporting process |
 | `CODE_OF_CONDUCT.md` | Community standards |

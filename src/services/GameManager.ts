@@ -9,7 +9,7 @@ import { getUrl, use as assetsUse } from '../assets';
 import { Player, PlayerColor, PlayerID } from '../models/Player';
 import { UI } from '../ui/interface';
 import { unitData } from '../data/UnitData';
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
 import MatchI from '../multiplayer/match';
 import Gameplay from '../multiplayer/gameplay';
 import { sleep } from '../utility/time';

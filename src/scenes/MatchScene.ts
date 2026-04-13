@@ -30,7 +30,10 @@ export class MatchScene extends Scene {
 		this.add.rectangle(width / 2, height / 2, width, height, 0x2a2a2a);
 	}
 	update(time: number, delta: number) {
-		// Simple update - no complex logic needed
+		if (this.gameInstance) {
+			this.gameInstance.phaserUpdate();
+			this.gameInstance.gameManager.phaserUpdate();
+		}
 	}
 
 	// Camera shake utility method for backwards compatibility with Phaser 2

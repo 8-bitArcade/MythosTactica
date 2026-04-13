@@ -8,7 +8,7 @@ import { Drop } from '../models/Drop';
 import { Creature } from '../models/Creature';
 import { HexGrid } from './hexgrid';
 import Game from '../game';
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
 import { DEBUG } from '../debug';
 import { getPointFacade } from './pointfacade';
 import * as Const from './const';
@@ -165,9 +165,11 @@ export class Hex {
 				const angles = [0, 1, 2, 3, 4, 5, 6].map((i) => angleStart - i * angleStep);
 				// NOTE: The coefficients below are "magic"; tested in-game.
 				const [radius_w, radius_h] = [0.58 * this.width, 0.69 * this.height];
-				const [offset_x, offset_y] = [radius_w + 2, radius_h + 9];				const points = angles.map(
-					(angle) =>
-						new Phaser.Geom.Point(Math.cos(angle) * radius_w + offset_x, Math.sin(angle) * radius_h + offset_y),
+				const [offset_x, offset_y] = [radius_w + 2, radius_h + 9];				const points = angles.map((angle) =>
+					new Phaser.Math.Vector2(
+						Math.cos(angle) * radius_w + offset_x,
+						Math.sin(angle) * radius_h + offset_y,
+					),
 				);
 				const polygon = new Phaser.Geom.Polygon(points);
 				this.hitBox.setInteractive(polygon, Phaser.Geom.Polygon.Contains);

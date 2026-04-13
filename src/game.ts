@@ -4,7 +4,7 @@ import { CreatureQueue } from './models/Creature_queue';
 import { GameLog } from './utility/gamelog';
 import { HexGrid } from './utility/hexgrid';
 import { unitData } from './data/UnitData';
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
 import MatchI from './multiplayer/match';
 import Gameplay from './multiplayer/gameplay';
 import { CreatureType, Realm, UnitData } from './data/types';
@@ -207,7 +207,7 @@ export default class Game {
 		this.firstKill = false;		this.freezedInput = false;
 		this.turnThrottle = false;
 		this.turn = 0;
-		// Phaser 3 Configuration
+		// Phaser 4 Configuration
 		const config: Phaser.Types.Core.GameConfig = {
 			type: Phaser.AUTO,
 			width: 1920,
@@ -215,17 +215,15 @@ export default class Game {
 			parent: 'combatwrapper',
 			backgroundColor: '#2a2a2a',
 			scene: [MenuScene, PreloadScene, MatchScene],
-			physics: {
-				default: 'arcade',
-				arcade: {
-					gravity: { x: 0, y: 0 },
-					debug: false
-				}
+			render: {
+				pixelArt: true,
 			},
 			scale: {
 				mode: Phaser.Scale.FIT,
-				autoCenter: Phaser.Scale.CENTER_BOTH
-			}		};		this.Phaser = new Phaser.Game(config);
+				autoCenter: Phaser.Scale.CENTER_BOTH,
+			},
+		};
+		this.Phaser = new Phaser.Game(config);
 
 		// Set up scene change listeners to maintain currentScene reference
 		this.Phaser.events.on('ready', () => {
