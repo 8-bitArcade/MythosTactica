@@ -1,5 +1,5 @@
 import { DEBUG } from './debug';
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
 
 // Import assets from the webpack-generated JavaScript file
 // eslint-disable-next-line @typescript-eslint/no-var-requires

@@ -1,11 +1,26 @@
-# Phaser 3 Migration Analysis for MythosTactica
+# Phaser 4 Migration for MythosTactica
 
-## Migration Status Overview
+> **Upgraded to Phaser 4.0.0 "Caladan" on 2026-04-13.**
+> Previously tracked Phaser 3 migration work is preserved below.
+
+## Phaser 4 Upgrade — Changes Applied
+
+### ✅ Breaking Changes Fixed (Phaser 3 → 4)
+- [x] `Phaser.Geom.Point` removed — replaced with `Phaser.Math.Vector2` (`src/utility/hex.ts:170`)
+- [x] Default export removed — all `import Phaser from 'phaser'` changed to `import * as Phaser from 'phaser'` (`game.ts`, `hex.ts`, `assets.ts`, `GameManager.ts`)
+- [x] `roundPixels` defaults to `false` — added `render: { pixelArt: true }` to game config (`src/game.ts`)
+- [x] Unused arcade physics block removed — was never used, avoided API drift (`src/game.ts`)
+- [x] `G.Phaser.add.audio()` (Phaser 2 API) — replaced with `G.createSound().play()` (`src/abilities/Infernal.ts:32`)
+- [x] Game loop wired up — `MatchScene.update()` now calls `game.phaserUpdate()` and `game.gameManager.phaserUpdate()`
+
+---
+
+## Phaser 3 Migration Status (carried forward)
 
 ### ✅ **COMPLETED**
-- [x] Basic Phaser 3 setup with TypeScript
+- [x] Basic Phaser 3/4 setup with TypeScript
 - [x] Scene structure created (PreloadScene, MatchScene, UIScene, etc.)
-- [x] Asset loading system updated for Phaser 3
+- [x] Asset loading system updated for Phaser 3/4
 - [x] Compatibility methods for camera shake and tweens
 - [x] jQuery replacement utilities started in script.ts
 
