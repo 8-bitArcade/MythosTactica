@@ -21,15 +21,6 @@ import { Effect } from './models/Effect';
 import { Ability } from './models/Ability';
 /* eslint-disable prefer-rest-params */
 
-/* NOTES/TODOS
- *
- * to fix @ts-expect-error
- * 2339: convert match.js -> match.ts
- * 2307: cannot find module
- *
- * refactor the trigger functions to get rid of the `prefer-rest-params` linter errors
- */
-
 /* Game Class
  *
  * Game contains all Game elements and functions.
@@ -43,32 +34,6 @@ import { Ability } from './models/Ability';
 type AnimationID = number;
 
 export default class Game {
-	/* Attributes
-	 *
-	 * NOTE : attributes and variables starting with $ are jQuery elements
-	 * and jQuery functions can be called directly from them.
-	 *
-	 * // jQuery attributes
-	 * $combatFrame :   Combat element containing all graphics except the UI
-	 *
-	 * // Game elements
-	 * players :            Array : Contains Player objects ordered by player ID (0 to 3)
-	 * creatures :          Array : Contains Creature objects (creatures[creature.id]) start at index 1
-	 * traps :              Array : Contains Trap objects
-	 *
-	 * grid :               Grid :  Grid object
-	 * UI :             UI :    UI object
-	 *
-	 * queue :              CreatureQueue : queue of creatures to manage phase order
-	 *
-	 * turn :               Integer :   Current's turn number
-	 *
-	 * // Normal attributes
-	 * playerMode :     Integer :   Number of players in the game
-	 * activeCreature : Creature :  Current active creature object reference
-	 * creatureData :       Array :     Array containing all data for the creatures
-	 *
-	 */
 	matchid: number;
 	playersReady: boolean;
 	preventSetup: boolean;
@@ -102,7 +67,7 @@ export default class Game {
 	currentScene?: Phaser.Scene;
 	msg: any; // type this properly
 	triggers: Record<string, RegExp>;
-	signals: any;
+	signals: Record<string, SignalChannel>;
 
 	// The optionals below are created by the various methods of `Game`, mainly by `setup` and `loadGame`
 
@@ -401,8 +366,7 @@ export default class Game {
 	}
 
 	phaserRender() {
-		for (let i = 1; i < this.creatureManager.creatures.length; i++) {
-		}
+		// Per-creature render hook; creatures render themselves via sprites.
 	}
 	// Load unit data method
 	loadUnitData() {
