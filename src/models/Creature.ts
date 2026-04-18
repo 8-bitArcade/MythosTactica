@@ -14,8 +14,6 @@ import { HEX_WIDTH_PX, hashOffsetCoords, offsetCoordsToPx, offsetNeighbors } fro
 import { CreatureType, Level, Realm, Unit, UnitName } from '../data/types';
 import { UnitDisplayInfo, UnitSize } from '../data/UnitData';
 
-// to fix @ts-expect-error 2554: properly type the arguments for the trigger functions in `game.ts`
-
 export type CreatureVitals = {
 	health: number;
 	regrowth: number;

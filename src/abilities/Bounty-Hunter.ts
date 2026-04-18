@@ -419,7 +419,6 @@ export default (G: Game) => {
 				// Trigger trap immediately if on self
 				if (isSelf) {
 					// onCreatureMove is Spa Goggles' trigger event
-					// @ts-expect-error 2554
 					G.onCreatureMove(swine, hex);
 				}
 			},

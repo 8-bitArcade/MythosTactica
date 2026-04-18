@@ -8,12 +8,6 @@ import Game from '../game';
 import { ScoreEvent } from './Player';
 import { Point } from '../utility/pointfacade';
 
-/*
- * NOTE
- *
- * convert game.js -> game.ts to get rid of @ts-expect-error 2339
- */
-
 /**
  * Ability Class
  *

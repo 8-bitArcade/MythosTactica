@@ -10,13 +10,6 @@ import { Point } from '../utility/pointfacade';
  * Player object with attributes
  */
 
-/**
- * NOTE
- * need to convert game.js -> game.ts to get rid of @ts-expect-errors
- *
- * to fix @ts-expect-error 2554: properly type the arguments for the trigger functions in `game.ts`
- */
-
 type ScoreType =
 	| 'firstKill'
 	| 'kill'

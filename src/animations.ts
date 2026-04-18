@@ -6,8 +6,6 @@ import { Ability } from './models/Ability';
 import { QuadraticCurve } from './utility/curve';
 import { DEBUG_ENABLE_FAST_WALKING, DEBUG_WALK_SPEED_MS } from './debug';
 
-// to fix @ts-expect-error 2554: properly type the arguments for the trigger functions in `game.ts`
-
 type AnimationOptions = {
 	customMovementPoint?: number;
 	overrideSpeed?: number;
@@ -225,7 +223,6 @@ export class Animations {
 				creature.faceHex(hex, creature.hexagons[0], false, false); // Determine facing
 			}
 		}
-		// @ts-expect-error 2554
 		game.onStepOut(creature, creature.hexagons[0]); // Trigger
 		game.grid.orderCreatureZ();
 	}

@@ -449,8 +449,24 @@ export default class Game {
 	}
 
 	onAttack(creature: any, damage: any) {
-		// Delegate to EffectManager to handle attack triggers  
+		// Delegate to EffectManager to handle attack triggers
 		this.effectManager.triggerEffect('onAttack', [creature, damage]);
+	}
+
+	onCreatureMove(creature: any, hex: any) {
+		return this.creatureManager.triggerAbility('onCreatureMove', [creature, hex]);
+	}
+
+	onStepIn(creature: any, hex: any) {
+		return this.creatureManager.triggerAbility('onStepIn', [creature, hex]);
+	}
+
+	onStepOut(creature: any, hex: any) {
+		return this.creatureManager.triggerAbility('onStepOut', [creature, hex]);
+	}
+
+	onHeal(creature: any, amount: any) {
+		return this.creatureManager.triggerAbility('onHeal', [creature, amount]);
 	}
 
 	// Method to retrieve creature stats - delegate to CreatureManager
