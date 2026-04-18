@@ -198,7 +198,7 @@ describe('Creature', () => {
 	});
 });
 
-jest.mock('../ability');
+jest.mock('../models/Ability');
 jest.mock('../utility/hex', () => {
 	return {
 		default: () => {
@@ -244,6 +244,8 @@ const getHexesMock = () => {
 			row.push({
 				displayPos: { x, y },
 				creature: 0,
+				display: { setTexture: jest.fn() },
+				overlay: { setTexture: jest.fn() },
 			});
 		}
 		arr.push(row);
@@ -255,17 +257,26 @@ import { unitData } from '../data/UnitData';
 import Game from '../game';
 
 const getGameMock = () => {
+	const creatureManager: { creatures: unknown[] } = { creatures: [] };
+	const players = [getPlayerMock(), getPlayerMock()];
+	const scene = getSceneMock();
 	const self = {
 		turn: 0,
-		creatures: [],
-		players: [],
+		get creatures() {
+			return creatureManager.creatures;
+		},
+		creatureManager,
+		players,
+		playerManager: { players },
 		queue: { update: jest.fn() },
 		updateQueueDisplay: jest.fn(),
 		grid: {
 			orderCreatureZ: jest.fn(),
 			hexes: getHexesMock(),
+			creatureGroup: getContainerMock(),
 		},
-		Phaser: getPhaserMock(),
+		Phaser: { scene: { getScene: () => scene } },
+		currentScene: scene,
 		retrieveCreatureStats: (type: number) => {
 			for (const d of unitData) {
 				if (d.id === type) {
@@ -279,44 +290,124 @@ const getGameMock = () => {
 			metaPowers: {
 				add: jest.fn(),
 			},
+			creature: { dispatch: jest.fn() },
 		},
 		plasma_amount: 10,
+		trapManager: { onReset: jest.fn() },
+		effectManager: { triggerEffect: jest.fn() },
+		gameManager: {
+			onStartPhase: jest.fn(),
+			onEndPhase: jest.fn(),
+			onReset: jest.fn(),
+			onHeal: jest.fn(),
+			updateQueueDisplay: jest.fn(),
+			log: jest.fn(),
+		},
 		onReset: jest.fn(),
 		onStartPhase: jest.fn(),
 		onEndPhase: jest.fn(),
 		log: jest.fn(),
 		onHeal: jest.fn(),
+		UI: { updateFatigue: jest.fn() },
 	};
-	self.players = [getPlayerMock(), getPlayerMock()];
 	return self;
 };
 
-const getPhaserMock = () => {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const self: Record<string, any> = { position: { set: jest.fn() } };
-	self.add = () => self;
-	self.create = () => self;
-	self.forEach = () => self;
-	self.group = () => self;
-	self.removeChild = () => self;
-	self.setTo = () => self;
-	self.start = () => self;
-	self.text = () => self;
-	self.to = () => self;
-	self.tween = () => self;
-	self.anchor = self;
-	self.data = {};
-	self.onComplete = self;
-	self.parent = self;
-	self.sprite = self;
-	self.scale = self;
-	self.texture = {
+const getContainerMock = () => {
+	const children: unknown[] = [];
+	const container = {
+		x: 0,
+		y: 0,
+		list: children,
+		setAlpha: jest.fn(() => container),
+		setVisible: jest.fn(() => container),
+		setPosition: jest.fn((x: number, y: number) => {
+			container.x = x;
+			container.y = y;
+			return container;
+		}),
+		add: jest.fn((child: unknown | unknown[]) => {
+			if (Array.isArray(child)) children.push(...child);
+			else children.push(child);
+			return container;
+		}),
+		remove: jest.fn(() => container),
+		each: jest.fn((cb: (child: unknown) => void) => {
+			children.forEach(cb);
+			return container;
+		}),
+		getAll: jest.fn(() => children.slice()),
+	};
+	return container;
+};
+
+const getSpriteMock = () => {
+	const data: Record<string, unknown> = {};
+	const sprite = {
+		x: 0,
+		y: 0,
 		width: 10,
 		height: 10,
+		displayWidth: 10,
+		displayHeight: 10,
+		alpha: 1,
+		setOrigin: jest.fn(() => sprite),
+		setScale: jest.fn(() => sprite),
+		setTexture: jest.fn(() => sprite),
+		setVisible: jest.fn(() => sprite),
+		setAlpha: jest.fn((v: number) => {
+			sprite.alpha = v;
+			return sprite;
+		}),
+		setData: jest.fn((k: string, v: unknown) => {
+			data[k] = v;
+			return sprite;
+		}),
+		getData: jest.fn((k: string) => data[k]),
+		setTint: jest.fn(() => sprite),
+		clearTint: jest.fn(() => sprite),
+		destroy: jest.fn(),
 	};
+	return sprite;
+};
 
+const getTextMock = () => {
+	const data: Record<string, unknown> = {};
+	const text = {
+		x: 0,
+		y: 0,
+		alpha: 1,
+		setOrigin: jest.fn(() => text),
+		setText: jest.fn(() => text),
+		setVisible: jest.fn(() => text),
+		setAlpha: jest.fn((v: number) => {
+			text.alpha = v;
+			return text;
+		}),
+		setData: jest.fn((k: string, v: unknown) => {
+			data[k] = v;
+			return text;
+		}),
+		getData: jest.fn((k: string) => data[k]),
+		destroy: jest.fn(),
+	};
+	return text;
+};
+
+const getSceneMock = () => {
 	return {
-		add: self,
+		add: {
+			container: jest.fn(() => getContainerMock()),
+			sprite: jest.fn(() => getSpriteMock()),
+			text: jest.fn(() => getTextMock()),
+		},
+		tweens: {
+			add: jest.fn((cfg: { onComplete?: () => void }) => {
+				if (cfg.onComplete) cfg.onComplete();
+				return { play: jest.fn(), on: jest.fn(), stop: jest.fn(), remove: jest.fn() };
+			}),
+		},
+		cameras: { main: { shake: jest.fn() } },
 	};
 };
 
