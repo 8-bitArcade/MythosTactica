@@ -13,19 +13,27 @@
 		"esModuleInterop": true,
 		"useDefineForClassFields": true,
 		"skipLibCheck": true,
-		"strict": false,
-		"noImplicitAny": false,
-		"strictNullChecks": false,
+		
+		// Strict type checking options - enhanced for code quality
+		"strict": true,
+		"noImplicitAny": true,
+		"strictNullChecks": true,
 		"strictFunctionTypes": true,
-		"strictBindCallApply": false,
-		"strictPropertyInitialization": false,
-		"noImplicitReturns": false,
+		"strictBindCallApply": true,
+		"strictPropertyInitialization": true,
+		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
-		"noUncheckedIndexedAccess": false,
-		"noImplicitOverride": false,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
 		"allowUnreachableCode": false,
 		"allowUnusedLabels": false,
-		"exactOptionalPropertyTypes": false
+		"exactOptionalPropertyTypes": true,
+		
+		// Additional strict checks for code quality
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"forceConsistentCasingInFileNames": true
 	},
 	"include": ["src", "types"],
 	"exclude": ["node_modules", "deploy", "**/*.test.ts", "**/*.spec.ts"]

@@ -3,17 +3,17 @@
  * @module hex
  */
 
-import { Trap } from '../models/Trap';
-import { Drop } from '../models/Drop';
-import { Creature } from '../models/Creature';
-import { HexGrid } from './hexgrid';
-import Game from '../game';
 import Phaser from 'phaser';
 import { DEBUG } from '../debug';
-import { getPointFacade } from './pointfacade';
-import * as Const from './const';
+import Game from '../game';
+import { Creature } from '../models/Creature';
+import { Drop } from '../models/Drop';
 import { Effect } from '../models/Effect';
 import { Player } from '../models/Player';
+import { Trap } from '../models/Trap';
+import * as Const from './const';
+import { HexGrid } from './hexgrid';
+import { getPointFacade } from './pointfacade';
 
 export enum Direction {
 	None = -1,
@@ -193,7 +193,7 @@ export class Hex {
 				this.onSelectFn(this);
 			});
 
-			this.hitBox.on('pointerout', (pointer) => {
+			this.hitBox.on('pointerout', (pointer: any) => {
 				if (game.freezedInput || game.UI.dashopen || !pointer.downElement) return;
 
 				// Clear dashed overlay when leaving a reachable hex
@@ -206,7 +206,7 @@ export class Hex {
 				this.onHoverOffFn(this);
 			});
 
-			this.hitBox.on('pointerup', (pointer) => {
+			this.hitBox.on('pointerup', (pointer: any) => {
 				if (game.freezedInput || game.UI.dashopen) {
 					return;
 				}
@@ -438,7 +438,7 @@ export class Hex {
 	/**
 	 * Change the appearance of the overlay hex
 	 */
-	overlayVisualState(classes) {
+	overlayVisualState(classes: any) {
 		classes = classes ? classes : '';
 		this.overlayClasses += ' ' + classes + ' ';
 		this.updateStyle();
@@ -713,7 +713,7 @@ export class Hex {
 	 * @param target
 	 * @deprecated: use PointFacade - e.g., getPointFacade().getTrapsAt(point).forEach(trap => trap.activate(trigger, target))
 	 */
-	activateTrap(trigger, target) {
+	activateTrap(trigger: any, target: any) {
 		this.trap?.activate(trigger, target);
 	}
 
@@ -726,7 +726,7 @@ export class Hex {
 	}
 
 	//---------DROP FUNCTION---------//
-	pickupDrop(creature) {
+	pickupDrop(creature: any) {
 		if (!this.drop) {
 			return;
 		}

@@ -88,7 +88,19 @@
 		"eslint-check": "eslint --print-config .eslintrc.json | eslint-config-prettier-check",
 		"test": "npm run lint && npm run build && jest",
 		"jest": "jest",
-		"start:jest": "jest --watch"
+		"start:jest": "jest --watch",
+		"type-check": "tsc --noEmit",
+		"type-check:watch": "tsc --noEmit --watch",
+		"format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
+		"format-check": "prettier --check \"src/**/*.{ts,js,json,md}\"",
+		"quality-check": "npm run type-check && npm run lint && npm run format-check",
+		"quality-fix": "npm run lint-fix && npm run format",
+		"quality-report": "npm run lint -- --format=json --output-file=reports/eslint-report.json && npm run jest -- --coverage --coverageReporters=json --coverageDirectory=reports",
+		"type-check:build": "tsc --project tsconfig.build.json --noEmit",
+		"type-check:test": "tsc --project tsconfig.test.json --noEmit",
+		"type-check:all": "npm run type-check && npm run type-check:build && npm run type-check:test",
+		"prepare": "husky install",
+		"validate-setup": "node scripts/validate-quality-setup.js"
 	},
 	"lint-staged": {
 		"*.{ts,js}": [

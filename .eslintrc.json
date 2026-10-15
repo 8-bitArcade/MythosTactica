@@ -2,28 +2,77 @@
 	"root": true,
 	"parser": "@typescript-eslint/parser",
 	"plugins": ["prettier", "@typescript-eslint"],
-	"extends": ["prettier", "plugin:prettier/recommended", "plugin:@typescript-eslint/recommended"],
+	"extends": [
+		"prettier", 
+		"plugin:prettier/recommended", 
+		"plugin:@typescript-eslint/recommended",
+		"plugin:@typescript-eslint/recommended-requiring-type-checking"
+	],
 	"rules": {
 		"prettier/prettier": "error",
 		"no-undef": "error",
 		"no-multi-assign": "error",
-		// Allow some linting issues that are prevalent in the codebase, but please refactor and fix!
+		"no-console": "warn",
+		"no-debugger": "error",
+		"prefer-const": "error",
+		
+		// TypeScript specific rules for better code quality
+		"@typescript-eslint/no-explicit-any": "warn",
+		"@typescript-eslint/no-unused-vars": "error",
 		"@typescript-eslint/no-empty-function": "warn",
-		"@typescript-eslint/no-unused-vars": "warn",
-		"@typescript-eslint/no-this-alias": "warn",
-		"prefer-const": "warn"
+		"@typescript-eslint/no-this-alias": "error",
+		"@typescript-eslint/prefer-nullish-coalescing": "error",
+		"@typescript-eslint/prefer-optional-chain": "error",
+		"@typescript-eslint/no-unnecessary-type-assertion": "error",
+		"@typescript-eslint/no-non-null-assertion": "warn",
+		"@typescript-eslint/explicit-function-return-type": "off",
+		"@typescript-eslint/explicit-module-boundary-types": "off",
+		"@typescript-eslint/no-inferrable-types": "error",
+		"@typescript-eslint/no-duplicate-imports": "error",
+		
+		// Code quality rules
+		"complexity": ["warn", 15],
+		"max-depth": ["warn", 4],
+		"max-lines-per-function": ["warn", 100],
+		"no-magic-numbers": ["warn", { "ignore": [-1, 0, 1, 2] }],
+		"no-duplicate-imports": "off", // Use TypeScript version instead
+		
+		// Enhanced TypeScript safety rules
+		"@typescript-eslint/no-unsafe-assignment": "error",
+		"@typescript-eslint/no-unsafe-member-access": "error",
+		"@typescript-eslint/no-unsafe-call": "error",
+		"@typescript-eslint/no-unsafe-return": "error",
+		"@typescript-eslint/no-unsafe-argument": "error",
+		"@typescript-eslint/restrict-template-expressions": "error",
+		"@typescript-eslint/restrict-plus-operands": "error",
+		
+		// Additional code quality rules
+		"@typescript-eslint/prefer-readonly": "warn",
+		"@typescript-eslint/prefer-readonly-parameter-types": "off",
+		"@typescript-eslint/consistent-type-definitions": ["error", "interface"],
+		"@typescript-eslint/consistent-type-imports": "error",
+		"@typescript-eslint/no-import-type-side-effects": "error",
+		"@typescript-eslint/method-signature-style": ["error", "property"]
 	},
 	"parserOptions": {
 		"ecmaVersion": 2020,
-		"sourceType": "module"
+		"sourceType": "module",
+		"project": "./tsconfig.json"
 	},
 	"env": {
 		"browser": true,
 		"es6": true,
-		"node": true
+		"node": true,
+		"jest": true
 	},
 	"globals": {
 		"Phaser": true,
 		"__WebpackModuleApi": true
-	}
+	},
+	"ignorePatterns": [
+		"deploy/**",
+		"node_modules/**",
+		"*.js",
+		"webpack.config.js"
+	]
 }

@@ -27,6 +27,9 @@ lib-cov
 # Coverage directory used by tools like istanbul
 coverage
 
+# Quality reports directory
+reports/
+
 # node-waf configuration
 .lock-wscript
 

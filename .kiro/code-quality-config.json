@@ -1,0 +1,83 @@
+{
+	"codeQuality": {
+		"version": "1.0.0",
+		"lastUpdated": "2025-01-17",
+		"configuration": {
+			"typescript": {
+				"strictMode": true,
+				"noImplicitAny": true,
+				"strictNullChecks": true,
+				"noUnusedLocals": true,
+				"noUnusedParameters": true
+			},
+			"eslint": {
+				"extends": [
+					"prettier",
+					"plugin:prettier/recommended",
+					"plugin:@typescript-eslint/recommended",
+					"plugin:@typescript-eslint/recommended-requiring-type-checking"
+				],
+				"strictRules": true,
+				"noUnsafeOperations": true
+			},
+			"prettier": {
+				"printWidth": 100,
+				"singleQuote": true,
+				"useTabs": true,
+				"trailingComma": "all"
+			},
+			"testing": {
+				"framework": "jest",
+				"environment": "jsdom",
+				"coverageThreshold": {
+					"global": {
+						"branches": 70,
+						"functions": 75,
+						"lines": 80,
+						"statements": 80
+					}
+				}
+			},
+			"husky": {
+				"preCommitHooks": [
+					"lint-staged"
+				]
+			},
+			"githubActions": {
+				"workflows": [
+					"code-quality.yml"
+				],
+				"checks": [
+					"eslint",
+					"typescript-compilation",
+					"prettier-format",
+					"tests-with-coverage",
+					"build-verification"
+				]
+			}
+		},
+		"qualityGates": {
+			"typescript": {
+				"zeroErrors": true,
+				"strictMode": true
+			},
+			"eslint": {
+				"zeroErrors": true,
+				"zeroWarnings": false
+			},
+			"tests": {
+				"minimumCoverage": 80,
+				"allTestsPass": true
+			},
+			"build": {
+				"successfulBuild": true,
+				"noWarnings": false
+			}
+		},
+		"reportingPaths": {
+			"eslintReport": "reports/eslint-report.json",
+			"coverageReport": "reports/coverage/",
+			"typeScriptReport": "reports/typescript-errors.json"
+		}
+	}
+}

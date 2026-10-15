@@ -3,8 +3,8 @@
  * @module gamelog
  */
 
-import * as version from './version';
 import { throttle } from 'underscore';
+import * as version from './version';
 
 const SEPARATOR = '||';
 
@@ -14,7 +14,7 @@ export class SerializableLog {
 	date: Date;
 	custom: any;
 
-	constructor(actions) {
+	constructor(actions: any) {
 		this.actions = actions;
 		this.version = version.full;
 		this.date = new Date();
