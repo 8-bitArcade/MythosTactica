@@ -1652,6 +1652,20 @@ export default class Game {
 			}
 			return;
 		}
+		if (message.type === 'creature-died') {
+			// Authoritative death confirmation broadcast by the client whose action
+			// caused it (see Creature.die()). The acting client already applied the
+			// death locally before sending, so the receiver only force-applies it
+			// when its own state still has the creature alive — this is what
+			// prevents "creature died for one player, still alive for the other".
+			// `remote=true` suppresses re-broadcasting to avoid an echo loop.
+			const creature = this.creatures[message.creatureId];
+			if (creature && !creature.dead) {
+				const killer = message.killerId != null ? this.creatures[message.killerId] : undefined;
+				creature.die(killer ?? { player: creature.player }, true);
+			}
+			return;
+		}
 		if (message.type === 'player-left') {
 			console.warn(
 				'[Game.handleLobbyMessage] Received player-left:',
